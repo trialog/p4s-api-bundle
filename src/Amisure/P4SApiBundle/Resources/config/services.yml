@@ -1,19 +1,19 @@
 parameters:
     p4s_host: %p4s_path%/api
-    data_accessor.mocked.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
-    data_accessor.dbmocked.class: Amisure\P4SApiBundle\Service\DbMockedDataAccessor
-    data_accessor.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
+    accessor.mocked.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
+    accessor.dbmocked.class: Amisure\P4SApiBundle\Service\DbMockedDataAccessor
+    accessor.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
 
 services:
-    p4s.data_accessor:
-        class: %data_accessor.dbmocked.class%
+    p4s.accessor:
+        class: %accessor.dbmocked.class%
         arguments: [@doctrine.orm.entity_manager, @session, @security.context, %p4s_host%]
         tags:
             -  { name: twig.extension }
             
     p4s.paramconverter.user:
         class: Amisure\P4SApiBundle\ParamConverter\UserParamConverter
-        arguments: [@p4s_data_accessor]
+        arguments: [@p4s.accessor]
         tags:
             - { name: request.param_converter, priority: 20 }
             

@@ -23,6 +23,7 @@ Work in progress
 ### To be done
 * [▒▒▒▒  5%] Link with the P4S external API - client version
 * [████ 90%] Link with P4S external API - authentication (using OAuth)
+* [▒▒▒▒  0%] Link this library to the future "trialog/php-p4s-api" (Symfony2 unaware)
 * [▒▒▒▒  5%] Configure a unit tests engine
 * [▒▒▒▒  0%] Add unit tests
 

@@ -1,5 +1,5 @@
 <?php
-namespace Amisure\Service1Bundle\OAuth;
+namespace Amisure\Service1Bundle\Login;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
