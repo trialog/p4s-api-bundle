@@ -1,0 +1,25 @@
+parameters:
+    p4s_host: %p4s_path%/api
+    data_accessor.mocked.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
+    data_accessor.dbmocked.class: Amisure\P4SApiBundle\Service\DbMockedDataAccessor
+    data_accessor.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
+
+services:
+    p4s_data_accessor:
+        class: %data_accessor.dbmocked.class%
+        arguments: [@doctrine.orm.entity_manager, @session, @security.context, %p4s_host%]
+        tags:
+            -  { name: twig.extension }
+            
+    p4s.paramconverter.user:
+        class: Amisure\P4SApiBundle\ParamConverter\UserParamConverter
+        arguments: [@p4s_data_accessor]
+        tags:
+            - { name: request.param_converter, priority: 20 }
+            
+    hwi_oauth.user.provider.entity:
+        class: HWI\Bundle\OAuthBundle\Security\Core\User\OAuthUserProvider
+#        class: Amisure\Service1Bundle\Entity\User\SessionUser
+    ib_user.oauth_user_provider:
+        class: Amisure\Service1Bundle\Entity\User\UserProvider
+        arguments: [@session, @doctrine, @service_container]
