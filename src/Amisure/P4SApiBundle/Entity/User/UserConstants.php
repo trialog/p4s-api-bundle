@@ -1,5 +1,5 @@
 <?php
-namespace Amisure\P4SApiBundle\Entity;
+namespace Amisure\P4SApiBundle\Entity\User;
 
 class UserConstants
 {

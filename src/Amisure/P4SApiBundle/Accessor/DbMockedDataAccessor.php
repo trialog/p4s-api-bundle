@@ -5,7 +5,7 @@ use Amisure\P4SApiBundle\Entity\User\BeneficiaryUser;
 use Amisure\P4SApiBundle\Entity\User\OrganizationUser;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Amisure\P4SApiBundle\Entity\UserConstants;
+use Amisure\P4SApiBundle\Entity\\UserUserConstants;
 use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 
 /**

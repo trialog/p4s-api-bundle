@@ -3,8 +3,6 @@ namespace Amisure\P4SApiBundle\Entity\User;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
-use Amisure\P4SApiBundle\Entity\UserConstants;
-use Amisure\P4SApiBundle\Entity\MissingDoc;
 
 /**
  * @ORM\Entity(repositoryClass="Amisure\P4SApiBundle\Entity\User\BeneficiaryUserRepository")
@@ -38,13 +36,6 @@ class BeneficiaryUser extends AUser
 
 	/**
 	 *
-	 * @var Collection @ORM\ManyToMany(targetEntity="Amisure\P4SApiBundle\Entity\MissingDoc")
-	 *      @ORM\JoinTable(name="s1_beneficiary_missingdoc")
-	 */
-	private $missingDocs;
-
-	/**
-	 *
 	 * @param mixed $params
 	 *        	Id or array of params (instead of the following of flat params)
 	 * @param string $gender        	
@@ -75,7 +66,6 @@ class BeneficiaryUser extends AUser
 		$this->setBirthPlace($birthPlace);
 		$this->setMaidenName($maidenName);
 		$this->organizations = new ArrayCollection();
-		$this->missingDocs = new ArrayCollection();
 	}
 
 	public function getOrganizations()
@@ -157,31 +147,6 @@ class BeneficiaryUser extends AUser
 	public function setMaidenName($maidenName)
 	{
 		$this->maidenName = $maidenName;
-		return $this;
-	}
-
-	public function getMissingDocs()
-	{
-		return $this->missingDocs;
-	}
-
-	public function setMissingDocs(ArrayCollection $missingDocs)
-	{
-		$this->missingDocs = $missingDocs;
-		return $this;
-	}
-
-	public function addMissingDoc(MissingDoc $missingDoc)
-	{
-		if ($this->missingDocs->contains($missingDoc)) {
-			$this->missingDocs->add($missingDoc);
-		}
-		return $this;
-	}
-
-	public function removeMissingDoc(MissingDoc $missingDoc)
-	{
-		$this->missingDocs->removeElement($missingDoc);
 		return $this;
 	}
 }

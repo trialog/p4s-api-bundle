@@ -1,8 +1,8 @@
 parameters:
     p4s_host: %p4s_path%/api
-    accessor.mocked.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
-    accessor.dbmocked.class: Amisure\P4SApiBundle\Service\DbMockedDataAccessor
-    accessor.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
+    accessor.mocked.class: Amisure\P4SApiBundle\Accessor\MockedDataAccessor
+    accessor.dbmocked.class: Amisure\P4SApiBundle\Accessor\DbMockedDataAccessor
+    accessor.class: Amisure\P4SApiBundle\Accessor\MockedDataAccessor
 
 services:
     p4s.accessor:

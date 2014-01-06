@@ -1,5 +1,5 @@
 <?php
-namespace Amisure\P4SApiBundle\Service;
+namespace Amisure\P4SApiBundle\Accessor;
 
 use Amisure\P4SApiBundle\Entity\User\BeneficiaryUser;
 use Amisure\P4SApiBundle\Entity\User\OrganizationUser;

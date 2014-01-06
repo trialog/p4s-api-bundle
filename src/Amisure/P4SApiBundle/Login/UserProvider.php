@@ -1,5 +1,5 @@
 <?php
-namespace Amisure\Service1Bundle\Login;
+namespace Amisure\P4SApiBundle\Login;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
@@ -32,7 +32,7 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 	{
 		$q = $this->em->createQueryBuilder('u')
 			->select('u, r')
-			->from('Amisure\Service1Bundle\Entity\User\SessionUser', 'u')
+			->from('Amisure\P4SApiBundle\Entity\User\SessionUser', 'u')
 			->join('u.roles', 'r')
 			->where('u.username = :username')
 			->setParameter('username', $username)
@@ -43,7 +43,7 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 			// s'il n'y a pas d'entrée correspondante aux critères
 			$user = $q->getSingleResult();
 		} catch (NoResultException $e) {
-			// throw new UsernameNotFoundException(sprintf('Unable to find an active admin Amisure\Service1Bundle\Entity\User\SessionUser object identified by "%s".', $username), 0, $e);
+			// throw new UsernameNotFoundException(sprintf('Unable to find an active admin Amisure\P4SApiBundle\Entity\User\SessionUser object identified by "%s".', $username), 0, $e);
 			return null;
 		}
 		return $user;
@@ -83,7 +83,7 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 			
 			// Add common data
 			$user->setAddress($data['profile']);
-			$roleRepository = $this->em->getRepository('AmisureService1Bundle:Role');
+			$roleRepository = $this->em->getRepository('AmisureP4SApiBundle:Role');
 			$user->addRole($roleRepository->findOneBy(array(
 				'role' => UserConstants::ROLE_USER
 			)));
@@ -107,12 +107,12 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 		if (! $this->supportsClass($class)) {
 			throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $class));
 		}
-		return $this->em->getRepository('Amisure\Service1Bundle\Entity\User\SessionUser')->find($user->getId());
+		return $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\SessionUser')->find($user->getId());
 	}
 
 	public function supportsClass($class)
 	{
-		$entityName = 'Amisure\\Service1Bundle\\Entity\\User\\SessionUser';
+		$entityName = 'Amisure\\P4SApiBundle\\Entity\\User\\SessionUser';
 		return $class === $entityName || is_subclass_of($class, $entityName);
 	}
 }
