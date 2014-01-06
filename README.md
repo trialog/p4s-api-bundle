@@ -1,6 +1,8 @@
 AMISURE - P4S API
 ========================
 
+[![Latest Stable Version](https://poser.pugx.org/trialog/p4s-api-bundle/v/stable.png)](https://packagist.org/packages/trialog/p4s-api-bundle)
+
 La plateforme P4S du projet de recherche français AMISURE (http://www.amisure.fr) offre une API REST.
 Cette librairie fournit un bundle Symfony2 permettant une intégration facilitée avec cette API. Plus besoin de se soucier de l'API REST bas niveau, il est possible de manipuler directement des objets PHP.
 
