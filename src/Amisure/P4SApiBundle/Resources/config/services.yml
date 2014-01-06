@@ -20,5 +20,5 @@ services:
     hwi_oauth.user.provider.entity:
         class: HWI\Bundle\OAuthBundle\Security\Core\User\OAuthUserProvider
     ib_user.oauth_user_provider:
-        class: Amisure\P4SApiBundle\OAuth\UserProvider
+        class: Amisure\P4SApiBundle\Login\UserProvider
         arguments: [@session, @doctrine, @service_container]
