@@ -1,3 +1,0 @@
-amisure_p4_s_api_homepage:
-    pattern:  /hello/{name}
-    defaults: { _controller: AmisureP4SApiBundle:Default:index }

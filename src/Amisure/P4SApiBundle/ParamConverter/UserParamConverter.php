@@ -5,8 +5,8 @@ use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInte
 use Doctrine\ORM\EntityManager;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ConfigurationInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Amisure\P4SApiBundle\Service\IDataAccessor;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
+use Amisure\P4SApiBundle\Accessor\Api\IDataAccessor;
 
 /**
  *
@@ -22,7 +22,7 @@ class UserParamConverter implements ParamConverterInterface
 
 	public function __construct(IDataAccessor $accessor)
 	{
-		$this->class = 'Amisure\\Service1Bundle\\Entity\\User\\SessionUser';
+		$this->class = 'Amisure\\P4SApiBundle\\Entity\\User\\SessionUser';
 		$this->accessor = $accessor;
 	}
 

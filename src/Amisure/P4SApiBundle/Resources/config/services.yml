@@ -5,7 +5,7 @@ parameters:
     data_accessor.class: Amisure\P4SApiBundle\Service\MockedDataAccessor
 
 services:
-    p4s_data_accessor:
+    p4s.data_accessor:
         class: %data_accessor.dbmocked.class%
         arguments: [@doctrine.orm.entity_manager, @session, @security.context, %p4s_host%]
         tags:
@@ -19,7 +19,6 @@ services:
             
     hwi_oauth.user.provider.entity:
         class: HWI\Bundle\OAuthBundle\Security\Core\User\OAuthUserProvider
-#        class: Amisure\Service1Bundle\Entity\User\SessionUser
     ib_user.oauth_user_provider:
-        class: Amisure\Service1Bundle\Entity\User\UserProvider
+        class: Amisure\P4SApiBundle\OAuth\UserProvider
         arguments: [@session, @doctrine, @service_container]
