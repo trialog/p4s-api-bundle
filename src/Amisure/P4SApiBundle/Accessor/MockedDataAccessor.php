@@ -145,10 +145,10 @@ class MockedDataAccessor extends ADataAccessor
 
 	public function getOrganizationUserProfile($criteria = array())
 	{
-		if ('CG' == $criteria['organizationType']) {
+		if ($this->user3->getOrganizationType() == @$criteria['organizationType'] || $this->user3->getId() == @$criteria['id']) {
 			$profile = $this->user3;
 		}
-		elseif ('SAAD' == $criteria['organizationType']) {
+		elseif ($this->user4->getOrganizationType() == @$criteria['organizationType'] || $this->user4->getId() == @$criteria['id']) {
 			$profile = $this->user4;
 		}
 		else {
@@ -173,6 +173,11 @@ class MockedDataAccessor extends ADataAccessor
 	public function updateBeneficiaryEvent($event)
 	{
 		return 0;
+	}
+
+	public function removeBeneficiaryEvent($event)
+	{
+		return true;
 	}
 
 	public function getBeneficiaryEvaluation($criteria = array())

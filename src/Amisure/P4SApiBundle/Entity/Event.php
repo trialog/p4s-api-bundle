@@ -46,15 +46,33 @@ class Event
 	 */
 	private $dateEnd;
 
+	/**
+	 * @ORM\ManyToOne(targetEntity="Amisure\P4SApiBundle\Entity\EventRecurrence", cascade={"persist", "remove"})
+	 */
+	private $recurrence;
+
+	/**
+	 * @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\Event", mappedBy="parent", cascade={"persist", "remove"})
+	 */
+	private $childs;
+
+	/**
+	 * @ORM\ManyToOne(targetEntity="Amisure\P4SApiBundle\Entity\Event", inversedBy="childs")
+	 */
+	private $parent;
+
 	public function __construct($object = '')
 	{
 		$this->setId(- 1);
 		$this->setObject($object);
 		$this->dateStart = new \DateTime();
 		$this->dateStart->add(new \DateInterval('P1D'));
+		$this->dateStart->setTime($this->dateStart->format('H'), ($this->dateStart->format('i') - ($this->dateStart->format('i') % 15)), $this->dateStart->format('s'));
 		$this->dateEnd = new \DateTime();
 		$this->dateEnd->add(new \DateInterval('P1DT2H'));
+		$this->dateEnd->setTime($this->dateEnd->format('H'), ($this->dateEnd->format('i') - ($this->dateEnd->format('i') % 15)), $this->dateEnd->format('s'));
 		$this->participants = new ArrayCollection();
+		$this->childs = new ArrayCollection();
 	}
 
 	public function getId()
@@ -114,11 +132,11 @@ class Event
 		$this->object = $object;
 		return $this;
 	}
-	
+
 	public function getCategory()
 	{
 		$found = 0;
-		$cat = preg_replace('!^\[(.+)\] .*$!iU', '$1', $this->object, -1, $found);
+		$cat = preg_replace('!^\[(.+)\] .*$!iU', '$1', $this->object, - 1, $found);
 		return (0 == $found ? '' : $cat);
 	}
 
@@ -141,6 +159,75 @@ class Event
 	public function setDateEnd(\DateTime $dateEnd)
 	{
 		$this->dateEnd = $dateEnd;
+		return $this;
+	}
+
+	public function getRecurrence()
+	{
+		return $this->recurrence;
+	}
+
+	public function setRecurrence($recurrenceFrequency, $recurrenceType = EventRecurrence::TypeWeek, $recurrenceNb = 0)
+	{
+		if (null != $recurrenceFrequency && $recurrenceFrequency instanceof EventRecurrence) {
+			$this->recurrence = $recurrenceFrequency;
+		}
+		else {
+			$this->recurrence = new EventRecurrence($recurrenceFrequency, $recurrenceType, $recurrenceNb);
+		}
+		return $this;
+	}
+
+	public function getChilds()
+	{
+		return $this->childs;
+	}
+
+	public function setChilds(ArrayCollection $childs)
+	{
+		$this->childs = $childs;
+		return $this;
+	}
+
+	/**
+	 *
+	 * @param Event $child        	
+	 * @return \Amisure\P4SApiBundle\Entity\Event
+	 */
+	public function addChild(Event $child)
+	{
+		$child->setParent($this);
+		if (! $this->childs->contains($child)) {
+			$this->childs->add($child);
+		}
+		return $this;
+	}
+
+	/**
+	 *
+	 * @param int|Event $child
+	 *        	Index of the child, or child Event object
+	 * @return \Amisure\P4SApiBundle\Entity\Event
+	 */
+	public function removeChild($child)
+	{
+		if (is_numeric($child)) {
+			$this->childs->remove($child);
+		}
+		else {
+			$this->childs->removeElement($child);
+		}
+		return $this;
+	}
+
+	public function getParent()
+	{
+		return $this->parent;
+	}
+
+	public function setParent($parent)
+	{
+		$this->parent = $parent;
 		return $this;
 	}
 

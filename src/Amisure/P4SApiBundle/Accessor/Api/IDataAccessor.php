@@ -1,6 +1,8 @@
 <?php
 namespace Amisure\P4SApiBundle\Accessor\Api;
 
+use Amisure\P4SApiBundle\Entity\Event;
+
 /**
  *
  * @author Olivier Maridat (Trialog)
@@ -19,6 +21,8 @@ interface IDataAccessor
 	public function getBeneficiaryEvents($criteria = array());
 
 	public function updateBeneficiaryEvent($event);
+
+	public function removeBeneficiaryEvent(Event $event);
 
 	public function getBeneficiaryEvaluation($criteria = array());
 

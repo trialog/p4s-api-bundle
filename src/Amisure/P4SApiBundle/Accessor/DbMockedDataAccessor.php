@@ -5,8 +5,10 @@ use Amisure\P4SApiBundle\Entity\User\BeneficiaryUser;
 use Amisure\P4SApiBundle\Entity\User\OrganizationUser;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Amisure\P4SApiBundle\Entity\\UserUserConstants;
+use Amisure\P4SApiBundle\Entity\User\UserConstants;
+use Amisure\P4SApiBundle\Entity\Event;
 use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
+use Amisure\P4SApiBundle\Entity\EventRecurrence;
 
 /**
  * Accessor for the P4S data
@@ -68,10 +70,18 @@ class DbMockedDataAccessor extends ADataAccessor
 
 	public function getOrganizationUserProfile($criteria = array())
 	{
-		if (empty($criteria) || (! array_key_exists('organizationType', $criteria) && ! array_key_exists('beneficiaryId', $criteria))) {
+		if (empty($criteria)) {
+			throw new \Exception('Unknown beneficiary\'s contact with these empty criteria');
+		}
+		if (array_key_exists('organizationType', $criteria) && array_key_exists('beneficiaryId', $criteria)) {
+			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
+		}
+		elseif (array_key_exists('id', $criteria)) {
+			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->find($criteria['id']);
+		}
+		else {
 			throw new \Exception('Unknown beneficiary\'s contact with these given criteria');
 		}
-		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
 		return $profile;
 	}
 
@@ -93,15 +103,69 @@ class DbMockedDataAccessor extends ADataAccessor
 		if (empty($criteria) || ! array_key_exists('beneficiaryId', $criteria)) {
 			throw new \Exception('Unknown beneficiary\'s event list with these given criteria');
 		}
-		$events = $this->em->getRepository('AmisureP4SApiBundle:Event')->findByBeneficiary($criteria['beneficiaryId']);
+		$events = $this->em->getRepository('AmisureP4SApiBundle:Event')->findByBeneficiary($criteria['beneficiaryId'], @$criteria['endDate'], @$criteria['startDate']);
 		return $events;
 	}
 
 	public function updateBeneficiaryEvent($event)
 	{
+		// Create sub-events
+		$recurrence = $event->getRecurrence();
+		if (null != $recurrence && $recurrence->getNb() > 1) {
+			// Remove previous events
+			$childs = $event->getChilds();
+			if (null == $childs && $childs->count() <= 0 && null != $event->getParent() && null != $event->getParent()->getChilds() && $event->getParent()
+				->getChilds()
+				->count() >= 0) {
+				$childs = $parent->getChilds();
+			}
+			$childsSize = $childs->count();
+			$stillSomeChild = true;
+			$participants = $event->getParticipants();
+			$nbEvent = $event->getRecurrence()->getNb();
+			for ($i = 0; $i < ($nbEvent-1); $i ++) {
+				// Update childs (if any)
+				if ($stillSomeChild && $i < $childsSize) {
+					$subEvent = $childs->get($i);
+					$subEvent->setObject('[' . $event->getCategory() . '] ' . $event->getObject());
+				}
+				// Create new childs
+				else {
+					$stillSomeChild = false;
+					$subEvent = new Event('[' . $event->getCategory() . '] ' . $event->getObject());
+				}
+				foreach ($participants as $participant) {
+					$subEvent->addParticipant($participant);
+				}
+				$diff = '+' . (($i+1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
+				$dateStart = clone $event->getDateStart();
+				$dateEnd = clone $event->getDateEnd();
+				$subEvent->setDateStart($dateStart->modify($diff));
+				$subEvent->setDateEnd($dateEnd->modify($diff));
+				$subEvent->setRecurrence($recurrence);
+				$event->addChild($subEvent);
+			}
+			// Remove remaining childs (if any)
+			if ($stillSomeChild) {
+				for ($i=$i; $i < $childsSize; $i ++) {
+					$child = $childs->get($i);
+					$event->removeChild($i);
+					$this->em->remove($child);
+					$childsSize--;
+					$i--;
+				}
+			}
+		}
 		$this->em->persist($event);
 		$this->em->flush();
 		return $event->getId();
+	}
+
+	public function removeBeneficiaryEvent(Event $event)
+	{
+		$this->em->remove($event);
+		$this->em->flush();
+		return true;
 	}
 
 	public function getBeneficiaryEvaluation($criteria = array())
@@ -112,7 +176,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		$evaluation = null;
 		$params = array();
 		$orderBy = array();
-		if (UserConstants::CG != $this->securityCtx->getToken()->getUser()->getOrganizationType()) {
+		if (UserConstants::CG != $this->securityCtx->getToken()
+			->getUser()
+			->getOrganizationType()) {
 			$params['finished'] = true;
 		}
 		// Find most recent evaluation of this beneficiary
@@ -136,7 +202,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		$evaluations = null;
 		$params = array();
 		$params['beneficiaryId'] = $criteria['beneficiaryId'];
-		if (UserConstants::CG != $this->securityCtx->getToken()->getUser()->getOrganizationType()) {
+		if (UserConstants::CG != $this->securityCtx->getToken()
+			->getUser()
+			->getOrganizationType()) {
 			$params['finished'] = true;
 		}
 		$evaluations = $this->em->getRepository('AmisureP4SApiBundle:Evaluation')->findBy($params, array(
@@ -161,16 +229,17 @@ class DbMockedDataAccessor extends ADataAccessor
 		if (array_key_exists('beneficiaryId', $criteria)) {
 			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByBeneficiary($criteria['beneficiaryId'], $criteria['organizationType']);
 		}
-		else if (array_key_exists('departementCode', $criteria)) {
-			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByDepartement($criteria['organizationType'], $criteria['departementCode']);
-		}
-		else {
-			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findBy(array(
-				'type' => $criteria['organizationType']
-			), array(
-				'name' => 'ASC'
-			));
-		}
+		else 
+			if (array_key_exists('departementCode', $criteria)) {
+				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByDepartement($criteria['organizationType'], $criteria['departementCode']);
+			}
+			else {
+				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findBy(array(
+					'type' => $criteria['organizationType']
+				), array(
+					'name' => 'ASC'
+				));
+			}
 		return $organizations;
 	}
 }
