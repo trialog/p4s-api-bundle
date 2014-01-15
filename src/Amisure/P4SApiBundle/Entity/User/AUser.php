@@ -203,7 +203,7 @@ abstract class AUser extends SessionUser
 	 */
 	public function getFullAddress($withCountry=false)
 	{
-		return $this->getAddress()."\n".$this->getZipcode().' '.$this->getCity().($withCountry ? ' '.$this->getCountry() : '');
+		return $this->getAddress().', '.$this->getZipcode().' '.$this->getCity().($withCountry ? ' '.$this->getCountry() : '');
 	}
 
 	public function getEmail()

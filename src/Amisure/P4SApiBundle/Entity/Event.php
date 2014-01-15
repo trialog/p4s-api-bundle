@@ -62,7 +62,6 @@ class Event
 	 */
 	private $parent;
 
-
 	public function __construct($object = '')
 	{
 		$this->setId(- 1);

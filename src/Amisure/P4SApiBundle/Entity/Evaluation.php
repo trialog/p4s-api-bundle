@@ -51,7 +51,7 @@ class Evaluation
 
 	/**
 	 *
-	 * @var Collection @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\EvaluationElement", mappedBy="evaluation", cascade={"persist", "remove"})
+	 * @var Collection @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\EvaluationElement", mappedBy="evaluation", cascade={"persist"})
 	 */
 	private $elements;
 
