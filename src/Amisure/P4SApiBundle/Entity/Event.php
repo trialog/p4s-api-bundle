@@ -52,14 +52,16 @@ class Event
 	private $recurrence;
 
 	/**
-	 * @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\Event", mappedBy="parent", cascade={"persist", "remove"})
+	 * @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\Event", mappedBy="parent", orphanRemoval=true, cascade={"persist", "remove"})
 	 */
 	private $childs;
 
 	/**
 	 * @ORM\ManyToOne(targetEntity="Amisure\P4SApiBundle\Entity\Event", inversedBy="childs")
+	 * @ORM\JoinColumn(name="parent_event_id", referencedColumnName="id", nullable=true, onDelete="SET NULL")
 	 */
 	private $parent;
+
 
 	public function __construct($object = '')
 	{
