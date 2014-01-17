@@ -125,7 +125,7 @@ class Event
 
 	public function getObject()
 	{
-		return preg_replace('!^\[.+\] (.*)$!iU', '$1', $this->object);
+		return preg_replace('!^\[.+\] (.*)$!isU', '$1', $this->object);
 	}
 
 	public function setObject($object)
@@ -137,7 +137,7 @@ class Event
 	public function getCategory()
 	{
 		$found = 0;
-		$cat = preg_replace('!^\[(.+)\] .*$!iU', '$1', $this->object, - 1, $found);
+		$cat = preg_replace('!^\[(.+)\] .*$!isU', '$1', $this->object, - 1, $found);
 		return (0 == $found ? '' : $cat);
 	}
 
