@@ -22,17 +22,20 @@ To be completed...
 
 Work in progress
 --------------------------------
-### To be done
+### Current tasks
 * [▒▒▒▒  5%] Link with the P4S external API - client version
-* [████ 90%] Link with P4S external API - authentication (using OAuth)
+* [████ 95%] Link with P4S external API - authentication (using OAuth)
 * [▒▒▒▒  0%] Link this library to the future "trialog/php-p4s-api" (Symfony2 unaware)
 * [▒▒▒▒  5%] Configure a unit tests engine
 * [▒▒▒▒  0%] Add unit tests
 
-### Known bugs
-* Nothing at the moment
+### Future tasks
 
-Licence
+### Known bugs
+* Si aucune activité n'a eu lieu avec le P4S durant 1h, alors toutes tentatives de connexion du service ou d'appel au P4S (si l'utilisateur est déjà connecté au service) sont voués à l'échec.
+	* La solution consiste à manuellement se déconnecter du P4S (bouton "Déconnexion" en haut à droite sur l'IHM du P4S), puis de reconnecter le service au P4S (bouton "Se connecter via le P4S" sur l'IHM du service)
+
+License
 --------------------------------
 This software is the property of TRIALOG.
 

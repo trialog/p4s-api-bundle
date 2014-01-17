@@ -2,21 +2,29 @@ parameters:
     p4s_host: %p4s_path%/api
     accessor.mocked.class: Amisure\P4SApiBundle\Accessor\MockedDataAccessor
     accessor.dbmocked.class: Amisure\P4SApiBundle\Accessor\DbMockedDataAccessor
-    accessor.class: Amisure\P4SApiBundle\Accessor\MockedDataAccessor
+    accessor.class: Amisure\P4SApiBundle\Accessor\DataAccessor
 
 services:
+    p4s.http.client:
+        class: %guzzle.client.class%
+        arguments: [%p4s_host%]
+        tags:
+            - { name: guzzle.client }
+        calls:
+            - [ setUserAgent, [ 'trialog-p4s-api-bundle', true] ]
+
     p4s.accessor:
-        class: %accessor.dbmocked.class%
-        arguments: [@doctrine.orm.entity_manager, @session, @security.context, %p4s_host%]
+        class: %accessor.class%
+        arguments: [@p4s.http.client, @security.context, @doctrine.orm.entity_manager]
         tags:
             -  { name: twig.extension }
-            
+
     p4s.paramconverter.user:
         class: Amisure\P4SApiBundle\ParamConverter\UserParamConverter
         arguments: [@p4s.accessor]
         tags:
             - { name: request.param_converter, priority: 20 }
-            
+
     hwi_oauth.user.provider.entity:
         class: HWI\Bundle\OAuthBundle\Security\Core\User\OAuthUserProvider
     ib_user.oauth_user_provider:

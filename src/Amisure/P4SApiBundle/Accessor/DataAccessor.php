@@ -12,11 +12,10 @@ use Amisure\P4SApiBundle\Entity\EventRecurrence;
 
 /**
  * Accessor for the P4S data
- * Mocked version, not linked to the P4S, but to the current application database
  *
  * @author Olivier Maridat (Trialog)
  */
-class DbMockedDataAccessor extends ADataAccessor
+class DataAccessor extends ADataAccessor
 {
 
 	private $client;
@@ -120,7 +119,7 @@ class DbMockedDataAccessor extends ADataAccessor
 			$stillSomeChild = true;
 			$participants = $event->getParticipants();
 			$nbEvent = $event->getRecurrence()->getNb();
-			for ($i = 0; $i < ($nbEvent - 1); $i ++) {
+			for ($i = 0; $i < ($nbEvent-1); $i ++) {
 				// Update childs (if any)
 				if ($stillSomeChild && $i < $childsSize) {
 					$subEvent = $childs->get($i);
@@ -134,7 +133,7 @@ class DbMockedDataAccessor extends ADataAccessor
 				foreach ($participants as $participant) {
 					$subEvent->addParticipant($participant);
 				}
-				$diff = '+' . (($i + 1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
+				$diff = '+' . (($i+1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
 				$dateStart = clone $event->getDateStart();
 				$dateEnd = clone $event->getDateEnd();
 				$subEvent->setDateStart($dateStart->modify($diff));
@@ -144,12 +143,12 @@ class DbMockedDataAccessor extends ADataAccessor
 			}
 			// Remove remaining childs (if any)
 			if ($stillSomeChild) {
-				for ($i = $i; $i < $childsSize; $i ++) {
+				for ($i=$i; $i < $childsSize; $i ++) {
 					$child = $childs->get($i);
 					$event->removeChild($i);
 					$this->em->remove($child);
-					$childsSize --;
-					$i --;
+					$childsSize--;
+					$i--;
 				}
 			}
 		}
