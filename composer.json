@@ -32,7 +32,7 @@
 	"minimum-stability" : "stable",
 	"repositories" : [{
 			"type" : "vcs",
-			"url" : "https://github.com/trialog/HWIOAuthBundle"
+			"url" : "git@github.com:trialog/HWIOAuthBundle.git"
 		}
 	],
 	"config" : {
