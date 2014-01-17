@@ -3,7 +3,7 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "164386c0854ef3fa8644c9256edc197a",
+    "hash": "e15473e4a9f0dffb3a8c7c513388ab28",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -731,17 +731,17 @@
         },
         {
             "name": "hwi/oauth-bundle",
-            "version": "0.3.x-dev",
+            "version": "dev-master",
             "target-dir": "HWI/Bundle/OAuthBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "6e5fd9846c0cf88f5134fdee052f8f99a8f62950"
+                "url": "https://github.com/trialog/HWIOAuthBundle.git",
+                "reference": "09dc1c1c3ef6827713d4629d364678943be125b1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/6e5fd9846c0cf88f5134fdee052f8f99a8f62950",
-                "reference": "6e5fd9846c0cf88f5134fdee052f8f99a8f62950",
+                "url": "https://api.github.com/repos/trialog/HWIOAuthBundle/zipball/09dc1c1c3ef6827713d4629d364678943be125b1",
+                "reference": "09dc1c1c3ef6827713d4629d364678943be125b1",
                 "shasum": ""
             },
             "require": {
@@ -764,7 +764,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.3-dev"
+                    "dev-master": "0.4-dev"
                 }
             },
             "autoload": {
@@ -772,36 +772,33 @@
                     "HWI\\Bundle\\OAuthBundle": ""
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "Geoffrey Bachelet",
-                    "email": "geoffrey.bachelet@gmail.com",
-                    "homepage": "https://github.com/ubermuda"
-                },
-                {
-                    "name": "Contributors",
-                    "homepage": "https://github.com/hwi/HWIOAuthBundle/contributors"
-                },
-                {
                     "name": "Alexander",
-                    "email": "iam.asm89@gmail.com",
-                    "homepage": "http://asm89.github.io/"
+                    "email": "iam.asm89@gmail.com"
                 },
                 {
                     "name": "Joseph Bielawski",
                     "email": "stloyd@gmail.com"
+                },
+                {
+                    "name": "Geoffrey Bachelet",
+                    "email": "geoffrey.bachelet@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/hwi/HWIOAuthBundle/contributors"
                 }
             ],
             "description": "Support for authenticating users using both OAuth1.0a and OAuth2 in Symfony2.",
             "homepage": "http://github.com/hwi/HWIOAuthBundle",
             "keywords": [
                 "37signals",
-                "Authentication",
                 "amazon",
+                "authentication",
                 "bitbucket",
                 "bitly",
                 "box",
@@ -840,20 +837,23 @@
                 "yahoo",
                 "yandex"
             ],
-            "time": "2013-12-17 13:52:09"
+            "support": {
+                "source": "https://github.com/trialog/HWIOAuthBundle/tree/master"
+            },
+            "time": "2014-01-17 12:18:12"
         },
         {
             "name": "jdorn/sql-formatter",
-            "version": "v1.2.16",
+            "version": "v1.2.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jdorn/sql-formatter.git",
-                "reference": "8859d664737492d313c34796731b35eca851b362"
+                "reference": "64990d96e0959dff8e059dfcdc1af130728d92bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jdorn/sql-formatter/zipball/8859d664737492d313c34796731b35eca851b362",
-                "reference": "8859d664737492d313c34796731b35eca851b362",
+                "url": "https://api.github.com/repos/jdorn/sql-formatter/zipball/64990d96e0959dff8e059dfcdc1af130728d92bc",
+                "reference": "64990d96e0959dff8e059dfcdc1af130728d92bc",
                 "shasum": ""
             },
             "require": {
@@ -890,7 +890,7 @@
                 "highlight",
                 "sql"
             ],
-            "time": "2013-11-27 22:51:13"
+            "time": "2014-01-12 16:20:24"
         },
         {
             "name": "kriswallsmith/assetic",
