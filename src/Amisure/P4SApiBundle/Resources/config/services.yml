@@ -19,7 +19,7 @@ services:
 
     p4s.accessor:
         class: %accessor.class%
-        arguments: [@p4s.http.client, @session, @doctrine.orm.entity_manager]
+        arguments: [@p4s.http.client, @session, @doctrine.orm.entity_manager, @?service_container]
         tags:
             -  { name: twig.extension }
 

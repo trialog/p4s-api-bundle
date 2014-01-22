@@ -91,7 +91,6 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 		
 		// -- Save access token
 		$this->session->set('access_token', $response->getAccessToken());
-		$this->dataAccessor->updateConfig();
 		return $user;
 	}
 

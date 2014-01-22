@@ -28,17 +28,21 @@ class DbMockedDataAccessor extends ADataAccessor
 
 	private $beneficiaryList;
 
-	public function __construct(Client $client, Session $session, EntityManager $em)
+	private $container;
+
+	public function __construct(Client $client, Session $session, EntityManager $em, $container)
 	{
 		$this->client = $client;
 		$this->session = $session;
 		$this->em = $em;
 		$this->beneficiaryList = null;
+		$this->container = $container;
 	}
 
-	public function getBeneficiaryList()
+	public function getBeneficiaryList($criteria = array(), $filter = array())
 	{
-		$this->beneficiaryList = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findByRelatedBeneficiaries($this->securityCtx->getToken()
+		$securityCtx = $this->container->get('security.context');
+		$this->beneficiaryList = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findByRelatedBeneficiaries($securityCtx->getToken()
 			->getUser());
 		return $this->beneficiaryList;
 	}
@@ -50,19 +54,19 @@ class DbMockedDataAccessor extends ADataAccessor
 			$this->getBeneficiaryList();
 		}
 		foreach ($this->beneficiaryList as $k => $profile) {
-			if ($beneficiaryId == $profile->getId()) {
+			if ($beneficiaryId == $profile->getUsername()) {
 				return $this->beneficiaryList[$k];
 			}
 		}
 		return null;
 	}
 
-	public function getBeneficiaryProfile($beneficiaryId)
+	public function getBeneficiary($beneficiaryId, $profileType = 'FULL')
 	{
 		if (empty($beneficiaryId)) {
 			throw new \Exception('Unknown beneficiary\'s profile with these given criteria');
 		}
-		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->find($beneficiaryId);
+		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findOneBy(array('username' => $beneficiaryId));
 		return $profile;
 	}
 
@@ -76,14 +80,18 @@ class DbMockedDataAccessor extends ADataAccessor
 		if (empty($criteria)) {
 			throw new \Exception('Unknown beneficiary\'s contact with these empty criteria');
 		}
+		$profile = array();
 		if (array_key_exists('organizationType', $criteria) && array_key_exists('beneficiaryId', $criteria)) {
-			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
+			$profile[] = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
 		}
 		elseif (array_key_exists('id', $criteria)) {
-			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->find($criteria['id']);
+			$profile[] = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->find($criteria['id']);
 		}
 		else {
 			throw new \Exception('Unknown beneficiary\'s contact with these given criteria');
+		}
+		if (empty($profile)) {
+			$profile = null;
 		}
 		return $profile;
 	}
