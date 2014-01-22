@@ -1,5 +1,7 @@
 parameters:
-    p4s_host: %p4s_path%/api
+    p4s_timeout: 20
+    p4s_connect_timeout: 3
+    p4s_host: %p4s_path%api/
     accessor.mocked.class: Amisure\P4SApiBundle\Accessor\MockedDataAccessor
     accessor.dbmocked.class: Amisure\P4SApiBundle\Accessor\DbMockedDataAccessor
     accessor.class: Amisure\P4SApiBundle\Accessor\DataAccessor
@@ -12,10 +14,12 @@ services:
             - { name: guzzle.client }
         calls:
             - [ setUserAgent, [ 'trialog-p4s-api-bundle', true] ]
+            - [ setDefaultOption, [ 'timeout', %p4S_timeout%] ]
+            - [ setDefaultOption, [ 'connect_timeout', %p4S_connect_timeout%] ]
 
     p4s.accessor:
         class: %accessor.class%
-        arguments: [@p4s.http.client, @security.context, @doctrine.orm.entity_manager]
+        arguments: [@p4s.http.client, @session, @doctrine.orm.entity_manager]
         tags:
             -  { name: twig.extension }
 
@@ -29,4 +33,4 @@ services:
         class: HWI\Bundle\OAuthBundle\Security\Core\User\OAuthUserProvider
     ib_user.oauth_user_provider:
         class: Amisure\P4SApiBundle\Login\UserProvider
-        arguments: [@session, @doctrine, @service_container]
+        arguments: [@session, @doctrine.orm.entity_manager, @p4s.accessor]

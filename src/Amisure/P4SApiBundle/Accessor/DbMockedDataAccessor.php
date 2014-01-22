@@ -9,6 +9,7 @@ use Amisure\P4SApiBundle\Entity\User\UserConstants;
 use Amisure\P4SApiBundle\Entity\Event;
 use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Entity\EventRecurrence;
+use Guzzle\Http\Client;
 
 /**
  * Accessor for the P4S data
@@ -21,16 +22,16 @@ class DbMockedDataAccessor extends ADataAccessor
 
 	private $client;
 
-	private $securityCtx;
-
 	private $em;
+
+	private $session;
 
 	private $beneficiaryList;
 
-	public function __construct($client, $securityCtx, EntityManager $em)
+	public function __construct(Client $client, Session $session, EntityManager $em)
 	{
 		$this->client = $client;
-		$this->securityCtx = $securityCtx;
+		$this->session = $session;
 		$this->em = $em;
 		$this->beneficiaryList = null;
 	}
@@ -63,6 +64,11 @@ class DbMockedDataAccessor extends ADataAccessor
 		}
 		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->find($beneficiaryId);
 		return $profile;
+	}
+
+	public function getBeneficiaryProfile($beneficiaryId)
+	{
+		return $this->getBeneficiary($beneficiaryId);
 	}
 
 	public function getOrganizationUserProfile($criteria = array())
@@ -173,10 +179,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		$evaluation = null;
 		$params = array();
 		$orderBy = array();
-		if (UserConstants::CG != $this->securityCtx->getToken()
-			->getUser()
-			->getOrganizationType()) {
-			$params['finished'] = true;
+		$params['finished'] = true;
+		if (array_key_exists('finished', $criteria)) {
+			$params['finished'] = $criteria['finished'];
 		}
 		// Find most recent evaluation of this beneficiary
 		if (array_key_exists('beneficiaryId', $criteria) && (! array_key_exists('id', $criteria) || - 1 == $criteria['id'])) {
@@ -199,10 +204,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		$evaluations = null;
 		$params = array();
 		$params['beneficiaryId'] = $criteria['beneficiaryId'];
-		if (UserConstants::CG != $this->securityCtx->getToken()
-			->getUser()
-			->getOrganizationType()) {
-			$params['finished'] = true;
+		$params['finished'] = true;
+		if (array_key_exists('finished', $criteria)) {
+			$params['finished'] = $criteria['finished'];
 		}
 		$evaluations = $this->em->getRepository('AmisureP4SApiBundle:Evaluation')->findBy($params, array(
 			'evaluationDate' => 'DESC'

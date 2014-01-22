@@ -9,96 +9,120 @@ use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\EntityUserProvider;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
-use Amisure\P4SApiBundle\Entity\UserConstants;
 use Doctrine\ORM\EntityManager;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Amisure\P4SApiBundle\Entity\User\OrganizationUser;
 use Amisure\P4SApiBundle\Entity\User\BeneficiaryUser;
+use Amisure\P4SApiBundle\Entity\User\UserConstants;
+use Amisure\P4SApiBundle\Accessor\Api\IDataAccessor;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Amisure\P4SApiBundle\Accessor\Api\ResponseHelper;
 
 class UserProvider extends EntityUserProvider implements UserProviderInterface
 {
 
-	protected $session, $doctrine, $em, $container;
+	/**
+	 *
+	 * @var \Symfony\Component\HttpFoundation\Session\SessionInterface
+	 */
+	private $session;
 
-	public function __construct($session, $doctrine, $service_container)
+	/**
+	 *
+	 * @var \Doctrine\ORM\EntityManager
+	 */
+	private $em;
+
+	/**
+	 *
+	 * @var \Amisure\P4SApiBundle\Accessor\Api\IDataAccessor
+	 */
+	private $dataAccessor;
+
+	public function __construct(SessionInterface $session, EntityManager $em, IDataAccessor $dataAccessor)
 	{
 		$this->session = $session;
-		$this->doctrine = $doctrine;
-		$this->em = $doctrine->getManager();
-		$this->container = $service_container;
+		$this->em = $em;
+		$this->dataAccessor = $dataAccessor;
 	}
 
 	public function loadUserByUsername($username)
 	{
-		$q = $this->em->createQueryBuilder('u')
-			->select('u, r')
-			->from('Amisure\P4SApiBundle\Entity\User\SessionUser', 'u')
-			->join('u.roles', 'r')
-			->where('u.username = :username')
-			->setParameter('username', $username)
-			->getQuery();
-		
-		try {
-			// La méthode Query::getSingleResult() lance une exception
-			// s'il n'y a pas d'entrée correspondante aux critères
-			$user = $q->getSingleResult();
-		} catch (NoResultException $e) {
-			// throw new UsernameNotFoundException(sprintf('Unable to find an active admin Amisure\P4SApiBundle\Entity\User\SessionUser object identified by "%s".', $username), 0, $e);
-			return null;
+		$user = $this->dataAccessor->getBeneficiary($username);
+		if (null == $user) {
+			throw new UsernameNotFoundException("Unable to load this user info");
 		}
+		$roleRepository = $this->em->getRepository('AmisureP4SApiBundle:Role');
+		$user->addRole($roleRepository->findOneBy(array(
+			'role' => UserConstants::ROLE_USER
+		)));
+		$user->addRole($roleRepository->findOneBy(array(
+			'role' => $user->getRole()
+		)));
 		return $user;
 	}
-	
-	/*
-	 * (non-PHPdoc) @see \HWI\Bundle\OAuthBundle\Security\Core\User\EntityUserProvider::loadUserByOAuthUserResponse()
-	 */
+
 	public function loadUserByOAuthUserResponse(UserResponseInterface $response)
 	{
-		// var_dump($response->getResponse());
-		// die('test' . __FILE__ );
+		// echa($response->getAccessToken());
+		// echa($response->getResponse(), __FILE__);
 		// -- Load user's data from P4S
 		$data = json_decode($response->getResponse(), true);
-		if (null != $data && array_key_exists('status', $data) && 'OK' == $data['status'] && array_key_exists('profile', $data) && '' != $data['profile']) {
-			$p4sId = $data['profile']['id'];
+		if (null != $data && array_key_exists('status', $data) && ResponseHelper::OK == $data['status'] && array_key_exists('data', $data) && null != $data['data']) {
+			$p4sId = $data['data']['id'];
 		}
 		else {
 			throw new UsernameNotFoundException("Unable to load this user info");
 		}
 		
-		$result = $this->loadUserByUsername($p4sId);
+		$result = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\SessionUser')->findOneBy(array(
+			'username' => $p4sId
+		));
 		// - Create an account
 		if (null == $result) {
-			$role = $data['profile']['role'];
-			$roleBridge = substr($role, 5, strlen($role) - 1);
-			// Org User
-			if (UserConstants::ROLE_ORG_USER == $roleBridge || UserConstants::ROLE_ORG_ADMIN_USER == $roleBridge) {
-				$user = new OrganizationUser($p4sId, '', $firstname, $lastname);
-				$user->setOrganizationType(@$data['profile']['organization_type']);
-				// $user->setSubRole(@$data['profile']['sub_role']);
-			}
-			// Beneficiary
-			else {
-				$user = new BeneficiaryUser($p4sId, '', $data['profile']['first_name'], $data['profile']['last_name']);
-			}
-			
-			// Add common data
-			$user->setAddress($data['profile']);
-			$roleRepository = $this->em->getRepository('AmisureP4SApiBundle:Role');
-			$user->addRole($roleRepository->findOneBy(array(
-				'role' => UserConstants::ROLE_USER
-			)));
-			$user->addRole($roleRepository->findOneBy(array(
-				'role' => $roleBridge
-			)));
-			$em = $this->doctrine->getManager();
-			$em->persist($user);
-			$em->flush();
+			$user = $this->fillUser($data['data']);
+			$this->createNewUser($user);
 		}
 		// - Existing user
 		else {
-			$user = $result;
+			// $user = $result;
+			$user = $this->fillUser($data['data']);
+			$user->setId($result->getId());
 		}
-		return $this->loadUserByUsername($p4sId);
+		
+		// -- Save access token
+		$this->session->set('access_token', $response->getAccessToken());
+		$this->dataAccessor->updateConfig();
+		return $user;
+	}
+
+	public function fillUser($data)
+	{
+		// Org User
+		if (UserConstants::ROLE_ORG_USER == $data['role'] || UserConstants::ROLE_ORG_ADMIN_USER == $data['role']) {
+			$user = OrganizationUser::fromJson($data);
+		}
+		// Beneficiary
+		else {
+			$user = BeneficiaryUser::fromJson($data);
+		}
+		
+		// Add common data
+		$roleRepository = $this->em->getRepository('AmisureP4SApiBundle:Role');
+		$user->addRole($roleRepository->findOneBy(array(
+			'role' => UserConstants::ROLE_USER
+		)));
+		$user->addRole($roleRepository->findOneBy(array(
+			'role' => $data['role']
+		)));
+		return $user;
+	}
+
+	public function createNewUser($user)
+	{
+		$this->session->set('newuser', true);
+		$this->em->persist($user);
+		$this->em->flush();
+		return $user;
 	}
 
 	public function refreshUser(UserInterface $user)
@@ -107,7 +131,7 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 		if (! $this->supportsClass($class)) {
 			throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $class));
 		}
-		return $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\SessionUser')->find($user->getId());
+		return $this->loadUserByUsername($user->getId());
 	}
 
 	public function supportsClass($class)

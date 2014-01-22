@@ -9,11 +9,15 @@ use Amisure\P4SApiBundle\Entity\Event;
  */
 interface IDataAccessor
 {
-
-	public function getBeneficiaryList();
+	public function getBeneficiaryList($criteria=array(), $filter=array());
 
 	public function getBeneficiarySmallProfile($beneficiaryId);
 
+	public function getBeneficiary($beneficiaryId, $profileType='FULL');
+	/**
+	 * @deprecated
+	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::getBeneficiary
+	 */
 	public function getBeneficiaryProfile($beneficiaryId);
 
 	public function getBeneficiaryEvent($criteria = array());

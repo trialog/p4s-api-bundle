@@ -24,7 +24,7 @@ class EventRepository extends EntityRepository
 			->select('ev')
 			->from($this->_entityName, 'ev')
 			->leftJoin('ev.participants', 'u')
-			->where('u.id = :beneficiaryId AND ev.dateStart >= :startAfter ' . ($endBefore ? ' AND ev.dateEnd <= :endBefore ' : ''))
+			->where('u.username = :beneficiaryId AND ev.dateStart >= :startAfter ' . ($endBefore ? ' AND ev.dateEnd <= :endBefore ' : ''))
 			->setParameter('beneficiaryId', $beneficiaryId)
 			->setParameter('startAfter', $startAfter)
 			->orderBy('ev.dateStart', 'ASC');

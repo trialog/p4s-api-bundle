@@ -134,13 +134,18 @@ class MockedDataAccessor extends ADataAccessor
 		return $profile;
 	}
 
-	public function getBeneficiaryProfile($beneficiaryId)
+	public function getBeneficiary($beneficiaryId)
 	{
 		$profile = $this->user2;
 		if (1 == $beneficiaryId) {
 			$profile = $this->user1;
 		}
 		return $profile;
+	}
+
+	public function getBeneficiaryProfile($beneficiaryId)
+	{
+		return $this->getBeneficiary($beneficiaryId);
 	}
 
 	public function getOrganizationUserProfile($criteria = array())
@@ -197,7 +202,6 @@ class MockedDataAccessor extends ADataAccessor
 	{
 		return 0;
 	}
-	
 
 	public function findOrganizations($criteria = array())
 	{
@@ -206,14 +210,18 @@ class MockedDataAccessor extends ADataAccessor
 		}
 		$organizations = null;
 		if ('SAAD' == $criteria['organisationType']) {
-			$organizations = array($this->org1);
+			$organizations = array(
+				$this->org1
+			);
 		}
 		elseif ('CG' == $criteria['organisationType']) {
-			$organizations = array($this->org2);
+			$organizations = array(
+				$this->org2
+			);
 		}
 		return $organizations;
 	}
-	
+
 	public function createDefaultMockedEvaluation($evaluation)
 	{
 		$cat0 = new EvaluationElementCategory('Variables discriminantes : autonomie physique et psychique');

@@ -13,7 +13,7 @@ class OrganizationUserRepository extends EntityRepository
 
 	public function findOrganizationBy($beneficiaryId, $organizationType)
 	{
-		$beneficiary = $this->_em->find('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser', $beneficiaryId);
+		$beneficiary = $this->_em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findOneBy(array('username' => $beneficiaryId));
 		$q = $this->_em->createQuery('SELECT o
 			FROM Amisure\P4SApiBundle\Entity\User\OrganizationUser o
 			WHERE o.organizationType = :organizationType

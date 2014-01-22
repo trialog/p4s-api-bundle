@@ -301,4 +301,9 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 		}
 		return false;
 	}
+	
+	public function __toString() 
+	{
+		return 'SessionUser[id='.$this->id.' , firstname='.$this->getFirstname().', lastname='.$this->getLastname().']';
+	}
 }

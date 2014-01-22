@@ -9,6 +9,8 @@ use Amisure\P4SApiBundle\Entity\User\UserConstants;
 use Amisure\P4SApiBundle\Entity\Event;
 use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Entity\EventRecurrence;
+use Amisure\P4SApiBundle\Accessor\Api\ResponseHelper;
+use Guzzle\Http\Client;
 
 /**
  * Accessor for the P4S data
@@ -22,46 +24,110 @@ class DataAccessor extends ADataAccessor
 
 	private $securityCtx;
 
+	private $session;
+
 	private $em;
 
 	private $beneficiaryList;
 
-	public function __construct($client, $securityCtx, EntityManager $em)
+	public function __construct(Client $client, Session $session, EntityManager $em)
 	{
 		$this->client = $client;
-		$this->securityCtx = $securityCtx;
+		$this->session = $session;
 		$this->em = $em;
+		
 		$this->beneficiaryList = null;
+		$this->client->setDefaultOption('query/access_token', $this->session->get('access_token'));
+	}
+	
+	public function updateConfig() {
+		$this->client->setDefaultOption('query/access_token', $this->session->get('access_token'));
 	}
 
-	public function getBeneficiaryList()
+	public function getBeneficiaryList($criteria = array(), $filter = array())
 	{
-		$this->beneficiaryList = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findByRelatedBeneficiaries($this->securityCtx->getToken()
-			->getUser());
+		if (null == $filter) {
+			$filter = array();
+		}
+		if (! array_key_exists('profile_type', $filter)) {
+			$filter['profile_type'] = 'FULL';
+		}
+		if (! array_key_exists('exception', $filter)) {
+			$filter['exception'] = true;
+		}
+		$data = array();
+		try {
+			$request = $this->client->get('beneficiaries', array(), array(
+				'query' => array(
+					'profile_type' => $filter['profile_type']
+				)
+			));
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				foreach ($response['beneficiaries'] as $beneficiary) {
+					$data[] = BeneficiaryUser::fromJson($beneficiary);
+				}
+			}
+			else {
+				if ($filter['exception']) {
+					throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+				}
+				else {
+					return null;
+				}
+			}
+		} catch (\Exception $e) {
+			if ($filter['exception']) {
+				throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryList()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			}
+			else {
+				return null;
+			}
+		}
+		$this->beneficiaryList = $data;
 		return $this->beneficiaryList;
 	}
 
 	public function getBeneficiarySmallProfile($beneficiaryId)
 	{
-		if (null == $this->beneficiaryList) {
-			echo 'Reload it!';
-			$this->getBeneficiaryList();
+		$data = null;
+		try {
+			$data = $this->getBeneficiary($beneficiaryId, 'MINIMAL');
+		} catch (\Exception $e) {
+			$data = new BeneficiaryUser(); // empty
 		}
-		foreach ($this->beneficiaryList as $k => $profile) {
-			if ($beneficiaryId == $profile->getId()) {
-				return $this->beneficiaryList[$k];
-			}
-		}
-		return null;
+		return $data;
 	}
 
-	public function getBeneficiaryProfile($beneficiaryId)
+	public function getBeneficiary($beneficiaryId, $profileType = 'FULL')
 	{
 		if (empty($beneficiaryId)) {
 			throw new \Exception('Unknown beneficiary\'s profile with these given criteria');
 		}
-		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->find($beneficiaryId);
-		return $profile;
+		
+		$data = null;
+		try {
+			$request = $this->client->get('beneficiaries/' . $beneficiaryId, array(), array(
+				'query' => array(
+					'profile_type' => $profileType
+				)
+			));
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				$data = BeneficiaryUser::fromJson($response['beneficiary']);
+			}
+			else {
+				throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiary()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
+	}
+
+	public function getBeneficiaryProfile($beneficiaryId)
+	{
+		return $this->getBeneficiary($beneficiaryId);
 	}
 
 	public function getOrganizationUserProfile($criteria = array())
@@ -69,16 +135,40 @@ class DataAccessor extends ADataAccessor
 		if (empty($criteria)) {
 			throw new \Exception('Unknown beneficiary\'s contact with these empty criteria');
 		}
-		if (array_key_exists('organizationType', $criteria) && array_key_exists('beneficiaryId', $criteria)) {
-			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
+		
+		$data = null;
+		try {
+			$request = null;
+			if (array_key_exists('organizationType', $criteria) && array_key_exists('beneficiaryId', $criteria)) {
+				$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
+				$request = $this->client->get('organizations/users', array(), array(
+					'query' => $criteria
+				));
+			}
+			elseif (array_key_exists('id', $criteria)) {
+				$request = $this->client->get('organizations/users', array(), array(
+					'query' => array(
+						'orgUserId' => $criteria['id']
+					)
+				));
+			}
+			else {
+				throw new \Exception('Unknown beneficiary\'s contact with these given criteria');
+			}
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				$data = array();
+				foreach ($response['data'] as $user) {
+					$data[] = OrganizationUser::fromJson($user);
+				}
+			}
+			else {
+				throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : getOrganizationUserProfile()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
 		}
-		elseif (array_key_exists('id', $criteria)) {
-			$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->find($criteria['id']);
-		}
-		else {
-			throw new \Exception('Unknown beneficiary\'s contact with these given criteria');
-		}
-		return $profile;
+		return $data;
 	}
 
 	public function getBeneficiaryEvent($criteria = array())
@@ -119,7 +209,7 @@ class DataAccessor extends ADataAccessor
 			$stillSomeChild = true;
 			$participants = $event->getParticipants();
 			$nbEvent = $event->getRecurrence()->getNb();
-			for ($i = 0; $i < ($nbEvent-1); $i ++) {
+			for ($i = 0; $i < ($nbEvent - 1); $i ++) {
 				// Update childs (if any)
 				if ($stillSomeChild && $i < $childsSize) {
 					$subEvent = $childs->get($i);
@@ -133,7 +223,7 @@ class DataAccessor extends ADataAccessor
 				foreach ($participants as $participant) {
 					$subEvent->addParticipant($participant);
 				}
-				$diff = '+' . (($i+1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
+				$diff = '+' . (($i + 1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
 				$dateStart = clone $event->getDateStart();
 				$dateEnd = clone $event->getDateEnd();
 				$subEvent->setDateStart($dateStart->modify($diff));
@@ -143,12 +233,12 @@ class DataAccessor extends ADataAccessor
 			}
 			// Remove remaining childs (if any)
 			if ($stillSomeChild) {
-				for ($i=$i; $i < $childsSize; $i ++) {
+				for ($i = $i; $i < $childsSize; $i ++) {
 					$child = $childs->get($i);
 					$event->removeChild($i);
 					$this->em->remove($child);
-					$childsSize--;
-					$i--;
+					$childsSize --;
+					$i --;
 				}
 			}
 		}
@@ -172,10 +262,9 @@ class DataAccessor extends ADataAccessor
 		$evaluation = null;
 		$params = array();
 		$orderBy = array();
-		if (UserConstants::CG != $this->securityCtx->getToken()
-			->getUser()
-			->getOrganizationType()) {
-			$params['finished'] = true;
+		$params['finished'] = true;
+		if (array_key_exists('finished', $criteria)) {
+			$params['finished'] = $criteria['finished'];
 		}
 		// Find most recent evaluation of this beneficiary
 		if (array_key_exists('beneficiaryId', $criteria) && (! array_key_exists('id', $criteria) || - 1 == $criteria['id'])) {
@@ -198,10 +287,9 @@ class DataAccessor extends ADataAccessor
 		$evaluations = null;
 		$params = array();
 		$params['beneficiaryId'] = $criteria['beneficiaryId'];
-		if (UserConstants::CG != $this->securityCtx->getToken()
-			->getUser()
-			->getOrganizationType()) {
-			$params['finished'] = true;
+		$params['finished'] = true;
+		if (array_key_exists('finished', $criteria)) {
+			$params['finished'] = $criteria['finished'];
 		}
 		$evaluations = $this->em->getRepository('AmisureP4SApiBundle:Evaluation')->findBy($params, array(
 			'evaluationDate' => 'DESC'

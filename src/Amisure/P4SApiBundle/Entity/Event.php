@@ -23,7 +23,7 @@ class Event
 
 	/**
 	 *
-	 * @var Collection @ORM\ManyToMany(targetEntity="Amisure\P4SApiBundle\Entity\User\SessionUser", mappedBy="events", cascade={"persist"})
+	 * @var Collection @ORM\ManyToMany(targetEntity="Amisure\P4SApiBundle\Entity\User\SessionUser", mappedBy="events")
 	 */
 	private $participants;
 

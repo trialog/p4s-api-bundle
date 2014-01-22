@@ -56,6 +56,8 @@ abstract class AUser extends SessionUser
 	 */
 	private $fax;
 
+	private $role;
+
 	/**
 	 *
 	 * @param mixed $params
@@ -69,12 +71,13 @@ abstract class AUser extends SessionUser
 	 * @param string $tel2        	
 	 * @param string $fax        	
 	 */
-	public function __construct($params, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '')
+	public function __construct($params, $role, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '')
 	{
 		parent::__construct($params, $firstname, $lastname);
 		// From Array
 		if (is_array($params)) {
 			extract($params);
+			$this->setRole(@$role);
 			$this->setGender(@$gender);
 			$this->setAddress(@$address);
 			$this->setEmail(@$email);
@@ -84,6 +87,7 @@ abstract class AUser extends SessionUser
 			return;
 		}
 		// From flat data
+		$this->setRole($role);
 		$this->setGender($gender);
 		$this->setAddress($address);
 		$this->setEmail($email);
@@ -94,6 +98,17 @@ abstract class AUser extends SessionUser
 
 	public function getGender()
 	{
+		if (is_numeric($this->gender)) {
+			if (0 == $this->gender) {
+				return 'Mlle';
+			}
+			elseif (2 == $this->gender) {
+				return 'Mme';
+			}
+			else {
+				return 'M.';
+			}
+		}
 		return $this->gender;
 	}
 
@@ -137,6 +152,7 @@ abstract class AUser extends SessionUser
 	{
 		return $this->zipcode;
 	}
+
 	/**
 	 *
 	 * @return string Example : 94 or 77 or 20
@@ -196,14 +212,16 @@ abstract class AUser extends SessionUser
 		$this->country = $country;
 		return $this;
 	}
-	
+
 	/**
-	 * @param boolean $withCountry True to also add the country. False by default
-	 * @return string Fill address : 25 avenue du Général Foy, 75008 Paris 
+	 *
+	 * @param boolean $withCountry
+	 *        	True to also add the country. False by default
+	 * @return string Fill address : 25 avenue du Général Foy, 75008 Paris
 	 */
-	public function getFullAddress($withCountry=false)
+	public function getFullAddress($withCountry = false)
 	{
-		return $this->getAddress()."\n".$this->getZipcode().' '.$this->getCity().($withCountry ? "\n".$this->getCountry() : '');
+		return $this->getAddress() . "\n" . $this->getZipcode() . ' ' . $this->getCity() . ($withCountry ? "\n" . $this->getCountry() : '');
 	}
 
 	public function getEmail()
@@ -247,6 +265,17 @@ abstract class AUser extends SessionUser
 	public function setFax($fax)
 	{
 		$this->fax = $fax;
+		return $this;
+	}
+
+	public function getRole()
+	{
+		return $this->role;
+	}
+
+	public function setRole($role)
+	{
+		$this->role = $role;
 		return $this;
 	}
 }
