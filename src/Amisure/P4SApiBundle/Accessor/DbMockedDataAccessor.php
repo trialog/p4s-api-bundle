@@ -66,7 +66,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		if (empty($beneficiaryId)) {
 			throw new \Exception('Unknown beneficiary\'s profile with these given criteria');
 		}
-		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findOneBy(array('username' => $beneficiaryId));
+		$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findOneBy(array(
+			'username' => $beneficiaryId
+		));
 		return $profile;
 	}
 
@@ -94,6 +96,29 @@ class DbMockedDataAccessor extends ADataAccessor
 			$profile = null;
 		}
 		return $profile;
+	}
+
+	public function findOrganizations($criteria = array())
+	{
+		if (empty($criteria) || (! array_key_exists('organizationType', $criteria))) {
+			throw new \Exception('Unknown organisations with these given criteria');
+		}
+		$organizations = null;
+		if (array_key_exists('beneficiaryId', $criteria)) {
+			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByBeneficiary($criteria['beneficiaryId'], $criteria['organizationType']);
+		}
+		else 
+			if (array_key_exists('departementCode', $criteria)) {
+				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByDepartement($criteria['organizationType'], $criteria['departementCode']);
+			}
+			else {
+				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findBy(array(
+					'type' => $criteria['organizationType']
+				), array(
+					'name' => 'ASC'
+				));
+			}
+		return $organizations;
 	}
 
 	public function getBeneficiaryEvent($criteria = array())
@@ -227,28 +252,5 @@ class DbMockedDataAccessor extends ADataAccessor
 		$this->em->persist($evaluation);
 		$this->em->flush();
 		return $evaluation->getId();
-	}
-
-	public function findOrganizations($criteria = array())
-	{
-		if (empty($criteria) || (! array_key_exists('organizationType', $criteria))) {
-			throw new \Exception('Unknown organisations with these given criteria');
-		}
-		$organizations = null;
-		if (array_key_exists('beneficiaryId', $criteria)) {
-			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByBeneficiary($criteria['beneficiaryId'], $criteria['organizationType']);
-		}
-		else 
-			if (array_key_exists('departementCode', $criteria)) {
-				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByDepartement($criteria['organizationType'], $criteria['departementCode']);
-			}
-			else {
-				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findBy(array(
-					'type' => $criteria['organizationType']
-				), array(
-					'name' => 'ASC'
-				));
-			}
-		return $organizations;
 	}
 }

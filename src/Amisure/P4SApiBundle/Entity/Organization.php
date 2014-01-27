@@ -32,9 +32,64 @@ class Organization
 	private $type;
 
 	/**
+	 * @ORM\Column(type="string", length=255, nullable=true)
+	 */
+	private $address;
+
+	/**
+	 * @ORM\Column(type="string", length=10, nullable=true)
+	 */
+	private $zipcode;
+
+	/**
+	 * @ORM\Column(type="string", length=120, nullable=true)
+	 */
+	private $city;
+
+	/**
+	 * @ORM\Column(type="string", length=120, nullable=true)
+	 */
+	private $country;
+
+	/**
+	 * @ORM\Column(type="string", length=120, nullable=true)
+	 */
+	private $email;
+
+	/**
+	 * @ORM\Column(type="string", length=25, nullable=true)
+	 */
+	private $tel;
+
+	/**
+	 * @ORM\Column(type="string", length=25, nullable=true)
+	 */
+	private $fax;
+
+	/**
 	 * @ORM\Column(type="string", nullable=true)
 	 */
 	private $website;
+
+	/**
+	 * @ORM\Column(type="string", nullable=true)
+	 */
+	private $logo;
+
+	/**
+	 * @ORM\Column(type="string", nullable=true)
+	 */
+	private $finessNumber;
+
+	/**
+	 * @ORM\Column(type="string", nullable=true)
+	 */
+	private $sirenNumber;
+
+	/**
+	 * @ORM\Column(type="string", nullable=true)
+	 */
+	private $siretNumber;
 
 	/**
 	 * @ORM\OneToOne(targetEntity="Amisure\P4SApiBundle\Entity\User\OrganizationUser")
@@ -49,9 +104,26 @@ class Organization
 		$this->setWebsite($website);
 	}
 
-	public function getId()
+	public static function fromJson($data)
 	{
-		return $this->id;
+		$id = null;
+		if (array_key_exists('org_id', $data)) {
+			$id = $data['org_id'];
+		}
+		elseif (array_key_exists('id', $data)) {
+			$id = $data['id'];
+		}
+		$org = new Organization(@$data['name'], @$data['organization_type'], @$data['website']);
+		$org->setId($id);
+		$org->setAddress($data);
+		$org->setTel(@$data['phone']);
+		$org->setFax(@$data['fax']);
+		$org->setEmail(@$data['fax']);
+		$org->setLogo(@$data['logo']);
+		$org->setFinessNumber(@$data['finess_number']);
+		$org->setSirenNumber(@$data['siren_number']);
+		$org->setSiretNumber(@$data['siret_number']);
+		return $org;
 	}
 
 	public function __toString()
@@ -93,10 +165,11 @@ class Organization
 		return $str;
 	}
 
-	/**
-	 *
-	 * @return \Amisure\P4SApiBundle\Entity\SaadList
-	 */
+	public function getId()
+	{
+		return $this->id;
+	}
+
 	public function setId($id)
 	{
 		$this->id = $id;
@@ -178,6 +251,133 @@ class Organization
 	public function setType($type)
 	{
 		$this->type = $type;
+		return $this;
+	}
+
+	public function getAddress()
+	{
+		return $this->address;
+	}
+
+	public function setAddress($address)
+	{
+		$this->address = $address;
+		if (is_array($address)) {
+			$this->address = @$address['address'];
+			$this->setZipcode(@$address['zipcode']);
+			$this->setCity(@$address['city']);
+			$this->setCountry(@$address['country']);
+		}
+		return $this;
+	}
+
+	public function getZipcode()
+	{
+		return $this->zipcode;
+	}
+
+	public function setZipcode($zipcode)
+	{
+		$this->zipcode = $zipcode;
+		return $this;
+	}
+
+	public function getCity()
+	{
+		return $this->city;
+	}
+
+	public function setCity($city)
+	{
+		$this->city = $city;
+		return $this;
+	}
+
+	public function getCountry()
+	{
+		return $this->country;
+	}
+
+	public function setCountry($country)
+	{
+		$this->country = $country;
+		return $this;
+	}
+
+	public function getEmail()
+	{
+		return $this->email;
+	}
+
+	public function setEmail($email)
+	{
+		$this->email = $email;
+		return $this;
+	}
+
+	public function getTel()
+	{
+		return $this->tel;
+	}
+
+	public function setTel($tel)
+	{
+		$this->tel = $tel;
+		return $this;
+	}
+
+	public function getFax()
+	{
+		return $this->fax;
+	}
+
+	public function setFax($fax)
+	{
+		$this->fax = $fax;
+		return $this;
+	}
+
+	public function getLogo()
+	{
+		return $this->logo;
+	}
+
+	public function setLogo($logo)
+	{
+		$this->logo = $logo;
+		return $this;
+	}
+
+	public function getFinessNumber()
+	{
+		return $this->finessNumber;
+	}
+
+	public function setFinessNumber($finessNumber)
+	{
+		$this->finessNumber = $finessNumber;
+		return $this;
+	}
+
+	public function getSirenNumber()
+	{
+		return $this->sirenNumber;
+	}
+
+	public function setSirenNumber($sirenNumber)
+	{
+		$this->sirenNumber = $sirenNumber;
+		return $this;
+	}
+
+	public function getSiretNumber()
+	{
+		return $this->siretNumber;
+	}
+
+	public function setSiretNumber($siretNumber)
+	{
+		$this->siretNumber = $siretNumber;
 		return $this;
 	}
 }

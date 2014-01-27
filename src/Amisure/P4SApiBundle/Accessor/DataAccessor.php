@@ -11,6 +11,7 @@ use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Entity\EventRecurrence;
 use Amisure\P4SApiBundle\Accessor\Api\ResponseHelper;
 use Guzzle\Http\Client;
+use Amisure\P4SApiBundle\Entity\Organization;
 
 /**
  * Accessor for the P4S data
@@ -39,8 +40,9 @@ class DataAccessor extends ADataAccessor
 		$this->beneficiaryList = null;
 		$this->client->setDefaultOption('query/access_token', $this->session->get('access_token'));
 	}
-	
-	public function updateConfig() {
+
+	public function updateConfig()
+	{
 		$this->client->setDefaultOption('query/access_token', $this->session->get('access_token'));
 	}
 
@@ -139,17 +141,9 @@ class DataAccessor extends ADataAccessor
 		$data = null;
 		try {
 			$request = null;
-			if (array_key_exists('organizationType', $criteria) && array_key_exists('beneficiaryId', $criteria)) {
-				$profile = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\OrganizationUser')->findOrganizationBy($criteria['beneficiaryId'], $criteria['organizationType']);
+			if (array_key_exists('organizationType', $criteria) || array_key_exists('beneficiaryId', $criteria) || array_key_exists('id', $criteria)) {
 				$request = $this->client->get('organizations/users', array(), array(
 					'query' => $criteria
-				));
-			}
-			elseif (array_key_exists('id', $criteria)) {
-				$request = $this->client->get('organizations/users', array(), array(
-					'query' => array(
-						'orgUserId' => $criteria['id']
-					)
 				));
 			}
 			else {
@@ -157,16 +151,49 @@ class DataAccessor extends ADataAccessor
 			}
 			$response = $request->send()->json();
 			if (ResponseHelper::OK == $response['status']) {
+				if (empty($response['data'])) {
+					return null;
+				}
 				$data = array();
 				foreach ($response['data'] as $user) {
 					$data[] = OrganizationUser::fromJson($user);
 				}
 			}
 			else {
-				throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
 			throw new \Exception('Erreur lors de l\'appel au P4S : getOrganizationUserProfile()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
+	}
+
+	public function findOrganizations($criteria = array())
+	{
+		if (empty($criteria) || (! array_key_exists('organizationType', $criteria))) {
+			throw new \Exception('Unknown organisations with these given criteria');
+		}
+		if (array_key_exists('departementCode', $criteria)) {
+			$criteria['zipcode'] = $criteria['departementCode'] . '*';
+		}
+		
+		$data = null;
+		try {
+			$request = $this->client->get('organizations', array(), array(
+				'query' => $criteria
+			));
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				$data = array();
+				foreach ($response['data'] as $org) {
+					$data[] = Organization::fromJson($org);
+				}
+			}
+			else {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : findOrganizations()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
 		}
 		return $data;
 	}
@@ -302,28 +329,5 @@ class DataAccessor extends ADataAccessor
 		$this->em->persist($evaluation);
 		$this->em->flush();
 		return $evaluation->getId();
-	}
-
-	public function findOrganizations($criteria = array())
-	{
-		if (empty($criteria) || (! array_key_exists('organizationType', $criteria))) {
-			throw new \Exception('Unknown organisations with these given criteria');
-		}
-		$organizations = null;
-		if (array_key_exists('beneficiaryId', $criteria)) {
-			$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByBeneficiary($criteria['beneficiaryId'], $criteria['organizationType']);
-		}
-		else 
-			if (array_key_exists('departementCode', $criteria)) {
-				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findByDepartement($criteria['organizationType'], $criteria['departementCode']);
-			}
-			else {
-				$organizations = $this->em->getRepository('AmisureP4SApiBundle:Organization')->findBy(array(
-					'type' => $criteria['organizationType']
-				), array(
-					'name' => 'ASC'
-				));
-			}
-		return $organizations;
 	}
 }
