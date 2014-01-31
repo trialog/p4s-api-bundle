@@ -27,12 +27,12 @@ class EvaluationModelItem
 	 * @var integer
 	 */
 	private $id;
-	
-	// /**
-	// *
-	// * @var string @ORM\Column(type="string", length=255, nullable=true)
-	// */
-	private $index;
+
+	/**
+	 *
+	 * @var string @ORM\Column(name="item_id", type="string", length=255, nullable=true)
+	 */
+	private $itemId;
 
 	/**
 	 *
@@ -61,12 +61,12 @@ class EvaluationModelItem
 	 */
 	private $responses;
 
-	public function __construct($label = '', $responseType = EvaluationModelItem::ResponseTypeInput, $index = '2', $id = -1)
+	public function __construct($label = '', $responseType = EvaluationModelItem::ResponseTypeInput, $itemId = -1, $id = -1)
 	{
-		$this->setId($id);
 		$this->setLabel($label);
 		$this->setResponseType($responseType);
-		$this->setIndex($index);
+		$this->setItemId($itemId);
+		$this->setId($id);
 		$this->responses = new ArrayCollection();
 	}
 
@@ -87,35 +87,21 @@ class EvaluationModelItem
 
 	/**
 	 *
-	 * @return \Amisure\P4SApiBundle\Entity\EvaluationModelItem
+	 * @return \Amisure\DataBrokerBundle\Entity\EvaluationModelItem
 	 */
-	public function setIndex($index)
+	public function setItemId($itemId)
 	{
-		$this->index = $index;
+		$this->itemId = $itemId;
 		return $this;
 	}
-
-	/**
-	 *
-	 * @return \Amisure\P4SApiBundle\Entity\EvaluationModelItem
-	 */
-	public function setItemIndex($itemIndex)
-	{
-		return $this->setIndex($itemIndex);
-	}
-
-	public function getIndex()
-	{
-		return $this->index;
-	}
-
+	
 	/**
 	 *
 	 * @return string
 	 */
-	public function getItemIndex()
+	public function getItemId()
 	{
-		return $this->getIndex();
+		return $this->itemId;
 	}
 
 	/**
@@ -214,11 +200,21 @@ class EvaluationModelItem
 		}
 		$responses = array();
 		foreach ($this->responses as $response) {
-			if (null != $response && true == @$response->selected) {
+			if (null != $response && true === $response->getSelected()) {
 				$responses[] = $response;
 			}
 		}
 		return $responses;
+	}
+
+	public function getResponseById($responseId)
+	{
+		foreach ($this->responses as $response) {
+			if ($response->getResponseId() == $responseId) {
+				return $response;
+			}
+		}
+		return null;
 	}
 
 	public function getResponseCollection()
@@ -254,6 +250,9 @@ class EvaluationModelItem
 			$evaluationResponse = new EvaluationModelItem($response, $label, $type);
 		}
 		$evaluationResponse->setItem($this);
+		if (- 1 == $evaluationResponse->getResponseId()) {
+			$evaluationResponse->setResponseId($this->responses->count());
+		}
 		$this->responses->add($evaluationResponse);
 		return $this;
 	}

@@ -328,8 +328,6 @@ class DataAccessor extends ADataAccessor
 			}
 			// Evaluations available
 			if ('merge' == $model || false === $model) {
-				var_dump($response['data']['evaluation']['categories'][1]['items'][6]['responses']);
-				echo __FILE__;
 				$data = EvaluationModel::fromJson($response['data']['evaluation']);
 			}
 			elseif (false === $model) {
@@ -406,8 +404,8 @@ class DataAccessor extends ADataAccessor
 		$data = - 1;
 		try {
 			// -- Find data
-// 			$serializer = new JsonSerializer();
-			$evaluationStr = $evaluation; //$serializer->serialize($evaluation, false);
+			$serializer = new \Zumba\Util\JsonSerializer();
+			$evaluationStr = $serializer->serialize($evaluation, false);
 			$request = $this->client->post('evaluations', array(), $evaluationStr);
 			$response = $request->send()->json();
 			if (ResponseHelper::OK == $response['status']) {
@@ -421,6 +419,54 @@ class DataAccessor extends ADataAccessor
 			}
 		} catch (\Exception $e) {
 			throw new \Exception('Erreur lors de l\'appel au P4S : updateBeneficiaryEvaluation()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
+	}
+
+	public function getEvaluationModel($code)
+	{
+		if (empty($code)) {
+			throw new \Exception('Unknown beneficiary\'s evaluation model with these given criteria');
+		}
+		
+		$data = null;
+		try {
+			// -- Find data
+			$request = $this->client->get('evaluations/model/' . $code);
+			$response = $request->send()->json();
+			// - Wrong result
+			if (ResponseHelper::OK != $response['status']) {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+			if (! array_key_exists('data', $response) || empty($response['data']) || ! is_array($response['data'])) {
+				return null;
+			}
+			// - Good result
+			$data = EvaluationModel::fromJson($response['data']);
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModel()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
+	}
+
+	public function getEvaluationModelCodes()
+	{
+		$data = null;
+		try {
+			// -- Find data
+			$request = $this->client->get('evaluations/codes');
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				if (! array_key_exists('data', $response)) {
+					return $data;
+				}
+				$data = $response['data'];
+			}
+			else {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModelCodes()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
 		}
 		return $data;
 	}

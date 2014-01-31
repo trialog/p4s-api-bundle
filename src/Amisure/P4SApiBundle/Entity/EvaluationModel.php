@@ -22,15 +22,6 @@ class EvaluationModel
 	private $id;
 
 	/**
-	 * Id of the section in the beneficiary folder (in the data server) that hosts the evaluation
-	 *
-	 * @ORM\Column(name="bf_section_id", type="string", length=255, unique=true)
-	 *
-	 * @var string
-	 */
-	private $folderSectionId;
-
-	/**
 	 * Logical name : AGGIR, MNA
 	 *
 	 * @ORM\Column(type="string", length=255, unique=true)
@@ -304,6 +295,9 @@ class EvaluationModel
 			$evaluationCategory = new EvaluationModelCategory($category);
 		}
 		$evaluationCategory->setEvaluation($this);
+		if (- 1 == $evaluationCategory->getCategoryId()) {
+			$evaluationCategory->setCategoryId($this->categories->count());
+		}
 		$this->categories->add($evaluationCategory);
 		return $this;
 	}
@@ -314,10 +308,52 @@ class EvaluationModel
 		return $this;
 	}
 
+	public function getCategoryById($categoryId)
+	{
+		foreach ($this->categories as $cat) {
+			if ($cat->getCategoryId() == $categoryId) {
+				return $cat;
+			}
+		}
+		return null;
+	}
+
+	public function getItemById($categoryId, $itemId)
+	{
+		foreach ($this->categories as $cat) {
+			if ($cat->getCategoryId() == $categoryId) {
+				foreach ($cat->getItems() as $item) {
+					if ($item->getItemId() == $itemId) {
+						return $item;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public function getResponseById($categoryId, $itemId, $responseId)
+	{
+		foreach ($this->categories as $cat) {
+			if ($cat->getCategoryId() == $categoryId) {
+				foreach ($cat->getItems() as $item) {
+					if ($item->getItemId() == $itemId) {
+						foreach ($item->getResponses() as $response) {
+							if ($response->getResponseId() == $responseId) {
+								return $response;
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	/**
 	 *
 	 * @param Evaluation $evaluation        	
-	 * @return \Amisure\P4SApiBundle\Entity\EvaluationModel
+	 * @return \Amisure\DataBrokerBundle\Entity\EvaluationModel
 	 */
 	public function mergeWithEvaluation(Evaluation $evaluation)
 	{
@@ -328,30 +364,35 @@ class EvaluationModel
 		$this->appId = $evaluation->getAppId();
 		$this->date = $evaluation->getDate();
 		$this->lastUpdate = $evaluation->getLastUpdate();
-		$items = array();
 		$cats = $this->getCategories();
+		$newCats = array();
+		$this->setCategories($newCats);
 		$nbOfCat = count($cats);
 		for ($i = 0; $i < $nbOfCat; $i ++) {
+			$newCat = new EvaluationModelCategory($cats[$i]->getLabel(), $cats[$i]->getCode(), $cats[$i]->getCategoryId(), $cats[$i]->getId());
 			$items = $cats[$i]->getItems();
 			$nbOfItem = count($items);
 			for ($j = 0; $j < $nbOfItem; $j ++) {
-				$relatedItem = $evaluation->getItemById($items[$j]->getId());
-				if (null != $relatedItem) {
-					$responses = $items[$j]->getResponses();
-					$nbOfResponse = count($responses);
-					for ($k = 0; $k < $nbOfResponse; $k ++) {
-						$relatedResponse = $relatedItem->getResponseById($responses[$k]->getId());
+				$newItem = new EvaluationModelItem($items[$j]->getLabel(), $items[$j]->getResponseType(), $items[$j]->getItemId(), $items[$j]->getId());
+				$responses = $items[$j]->getResponses();
+				$nbOfResponse = count($responses);
+				$relatedItem = $evaluation->getItemById($cats[$i]->getCategoryId(), $items[$j]->getItemId());
+				for ($k = 0; $k < $nbOfResponse; $k ++) {
+					$newResponse = new EvaluationModelItemResponse($responses[$k]->getValue(), $responses[$k]->getLabel(), $responses[$k]->getType(), $responses[$k]->getResponseId(), $responses[$k]->getId());
+					if (null != $relatedItem) {
+						$relatedResponse = $relatedItem->getResponseById($responses[$k]->getResponseId());
 						if (null != $relatedResponse) {
-							$responses[$k]->setValue($relatedResponse->getValue());
-							$responses[$k]->selected = true;
+							$newResponse->setValue($relatedResponse->getValue());
+							$newResponse->selected = $relatedResponse->getSelected();
 						}
 					}
-					$items[$j]->setResponses($responses);
+					$newItem->addResponse($newResponse);
 				}
+				$newCat->addItem($newItem);
 			}
-			$cats[$i]->setItems($items);
+			$newCats[] = $newCat;
 		}
-		$this->setCategories($cats);
+		$this->setCategories($newCats);
 		$this->setId($evaluation->getId());
 		return $this;
 	}
@@ -368,16 +409,13 @@ class EvaluationModel
 		$element->setLastUpdate(@$data['lastUpdate']);
 		if (array_key_exists('categories', $data) && is_array($data['categories']) && ! empty($data['categories'])) {
 			foreach ($data['categories'] as $cat) {
-				$newCategory = new EvaluationModelCategory(@$cat['label'], @$cat['code'], @$cat['id']);
+				$newCategory = new EvaluationModelCategory(@$cat['label'], @$cat['code'], @$cat['categoryId'], @$cat['id']);
 				if (array_key_exists('items', $cat) && is_array($cat['items']) && ! empty($cat['items'])) {
 					foreach ($cat['items'] as $item) {
-						$newItem = new EvaluationModelItem(@$item['label'], @$item['responseType'], @$item['index'], @$item['id']);
+						$newItem = new EvaluationModelItem(@$item['label'], @$item['responseType'], @$item['itemId'], @$item['id']);
 						if (array_key_exists('responses', $item) && is_array($item['responses']) && ! empty($item['responses'])) {
 							foreach ($item['responses'] as $response) {
-								$newResponse = new EvaluationModelItemResponse(@$response['value'], @$response['label'], @$response['type'], @$response['id']);
-								if (array_key_exists('selected', $response)) {
-									$newResponse->selected = $response['selected'];
-								}
+								$newResponse = new EvaluationModelItemResponse(@$response['value'], @$response['label'], @$response['type'], @$response['responseId'], @$response['id'], @$response['selected']);
 								$newItem->addResponse($newResponse);
 							}
 						}

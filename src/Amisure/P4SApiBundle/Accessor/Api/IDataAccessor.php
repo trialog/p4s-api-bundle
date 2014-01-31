@@ -14,7 +14,7 @@ interface IDataAccessor
 
 	/**
 	 * deprecated
-	 * 
+	 *
 	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::findBeneficiaries
 	 */
 	public function getBeneficiaryList($criteria = array(), $filter = array());
@@ -38,13 +38,17 @@ interface IDataAccessor
 
 	public function removeBeneficiaryEvent(Event $event);
 
+	public function getEvaluationModel($code);
+
+	public function getEvaluationModelCodes();
+
 	public function getBeneficiaryEvaluation($criteria = array());
 
 	public function findBeneficiaryEvaluations($criteria = array(), $filter = array());
 
 	/**
 	 * deprecated
-	 * 
+	 *
 	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::findBeneficiaryEvaluations
 	 */
 	public function getBeneficiaryEvaluations($criteria = array());
