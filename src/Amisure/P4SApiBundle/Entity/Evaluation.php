@@ -88,6 +88,13 @@ class Evaluation
 	private $lastUpdate;
 
 	/**
+	 * Object of the evaluation, added by the evaluator
+	 * 
+	 * @var string @ORM\Column(type="text")
+	 */
+	private $object;
+
+	/**
 	 * @ORM\OneToMany(targetEntity="Amisure\P4SApiBundle\Entity\EvaluationItem", mappedBy="evaluation", cascade={"persist", "remove"})
 	 *
 	 * @var Collection
@@ -318,4 +325,16 @@ class Evaluation
 		}
 		return $element;
 	}
+
+	public function getObject()
+	{
+		return $this->object;
+	}
+
+	public function setObject(string $object)
+	{
+		$this->object = $object;
+		return $this;
+	}
+	
 }

@@ -74,13 +74,19 @@ class EvaluationModel
 	private $lastUpdate;
 
 	/**
-	 *
+	 * Object of the evaluation, added by the evaluator
+	 * @var string @ORM\Column(type="text")
+	 */
+	private $object;
+	
+	/**
+	 * Label of this evaluation model
 	 * @var string @ORM\Column(type="text")
 	 */
 	private $label;
 
 	/**
-	 *
+	 * Description of this evaluation model
 	 * @var string @ORM\Column(type="text", nullable=true)
 	 */
 	private $description;
@@ -97,6 +103,8 @@ class EvaluationModel
 		$this->setCode($code);
 		$this->setLabel($label);
 		$this->setDescription($description);
+		$this->date = new \DateTime();
+		$this->lastUpdate = new \DateTime();
 		$this->categories = new ArrayCollection();
 	}
 
@@ -406,6 +414,7 @@ class EvaluationModel
 		$element->setAppId(@$data['appId']);
 		$element->setState(@$data['state']);
 		$element->setDate(@$data['date']);
+		$element->setObject(@$data['object']);
 		$element->setLastUpdate(@$data['lastUpdate']);
 		if (array_key_exists('categories', $data) && is_array($data['categories']) && ! empty($data['categories'])) {
 			foreach ($data['categories'] as $cat) {
@@ -427,4 +436,16 @@ class EvaluationModel
 		}
 		return $element;
 	}
+
+	public function getObject()
+	{
+		return $this->object;
+	}
+
+	public function setObject($object)
+	{
+		$this->object = $object;
+		return $this;
+	}
+	
 }
