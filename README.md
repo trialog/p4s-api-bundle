@@ -23,7 +23,15 @@ To be completed...
 Work in progress
 --------------------------------
 ### Current tasks
-* [▒▒▒▒  5%] Link with the P4S external API - client version
+* [█▒▒▒ 25%] Link with the P4S external API - client version
+	* Beneficiary: ok v1
+	* Organization: ok v1
+	* OrganizationUser: ok v1
+	* LiaisonBook
+	* Event
+	* Evaluation: in progress
+	* Document
+	* Send message
 * [████ 95%] Link with P4S external API - authentication (using OAuth)
 * [▒▒▒▒  0%] Link this library to the future "trialog/php-p4s-api" (Symfony2 unaware)
 * [▒▒▒▒  5%] Configure a unit tests engine

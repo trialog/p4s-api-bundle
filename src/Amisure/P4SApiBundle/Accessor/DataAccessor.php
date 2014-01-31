@@ -12,6 +12,9 @@ use Amisure\P4SApiBundle\Entity\EventRecurrence;
 use Amisure\P4SApiBundle\Accessor\Api\ResponseHelper;
 use Guzzle\Http\Client;
 use Amisure\P4SApiBundle\Entity\Organization;
+use Amisure\P4SApiBundle\Entity\Evaluation;
+use Amisure\P4SApiBundle\Entity\EvaluationModel;
+use Zumba\Util\JsonSerializer;
 
 /**
  * Accessor for the P4S data
@@ -46,7 +49,7 @@ class DataAccessor extends ADataAccessor
 		$this->client->setDefaultOption('query/access_token', $this->session->get('access_token'));
 	}
 
-	public function getBeneficiaryList($criteria = array(), $filter = array())
+	public function findBeneficiaries($criteria = array(), $filter = array())
 	{
 		if (null == $filter) {
 			$filter = array();
@@ -88,6 +91,11 @@ class DataAccessor extends ADataAccessor
 		}
 		$this->beneficiaryList = $data;
 		return $this->beneficiaryList;
+	}
+
+	public function getBeneficiaryList($criteria = array(), $filter = array())
+	{
+		return $this->findBeneficiaries($criteria, $filter);
 	}
 
 	public function getBeneficiarySmallProfile($beneficiaryId)
@@ -281,53 +289,139 @@ class DataAccessor extends ADataAccessor
 		return true;
 	}
 
-	public function getBeneficiaryEvaluation($criteria = array())
+	public function getBeneficiaryEvaluation($criteria = array(), $filter = array())
 	{
-		if (empty($criteria) || (! array_key_exists('id', $criteria) && ! array_key_exists('beneficiaryId', $criteria))) {
+		if (empty($criteria) || (! array_key_exists('id', $criteria)) && - 1 != $criteria['id']) {
 			throw new \Exception('Unknown beneficiary\'s evaluation with these given criteria');
 		}
-		$evaluation = null;
-		$params = array();
-		$orderBy = array();
-		$params['finished'] = true;
-		if (array_key_exists('finished', $criteria)) {
-			$params['finished'] = $criteria['finished'];
+		
+		// -- Adapt criteria
+		$id = $criteria['id'];
+		$model = 'merge';
+		if (! empty($filter)) {
+			$criteria = array_merge($criteria, array(
+				'filter' => $filter
+			));
+			if (array_key_exists('model', $filter)) {
+				$model = $filter['model'];
+			}
 		}
-		// Find most recent evaluation of this beneficiary
-		if (array_key_exists('beneficiaryId', $criteria) && (! array_key_exists('id', $criteria) || - 1 == $criteria['id'])) {
-			$params['beneficiaryId'] = $criteria['beneficiaryId'];
-			$orderBy['evaluationDate'] = 'DESC';
+		$data = null;
+		try {
+			// -- Find data
+			$request = $this->client->get('evaluations/' . $id, array(), array(
+				'query' => $criteria
+			));
+			$response = $request->send()->json();
+			// - Wrong result
+			if (ResponseHelper::OK != $response['status']) {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+			if (empty($response['data']) || ! array_key_exists('evaluation', $response['data']) || ! is_array($response['data']['evaluation']) || empty($response['data']['evaluation'])) {
+				return null;
+			}
+			// - Good result
+			$data = array();
+			// Model available and requested
+			if (array_key_exists('model', $response['data']) && (true === $model || 'separate' === $model)) {
+				$data['model'] = EvaluationModel::fromJson($response['data']['model']);
+			}
+			// Evaluations available
+			if ('merge' == $model || false === $model) {
+				var_dump($response['data']['evaluation']['categories'][1]['items'][6]['responses']);
+				echo __FILE__;
+				$data = EvaluationModel::fromJson($response['data']['evaluation']);
+			}
+			elseif (false === $model) {
+				$data = Evaluation::fromJson($response['data']['evaluation']);
+			}
+			else {
+				$data['evaluation'] = Evaluation::fromJson($response['data']['evaluation']);
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryEvaluation()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
 		}
-		// Given evaluation
-		elseif (array_key_exists('id', $criteria) && - 1 != $criteria['id']) {
-			$params['id'] = $criteria['id'];
-		}
-		$evaluation = $this->em->getRepository('AmisureP4SApiBundle:Evaluation')->findOneBy($params, $orderBy);
-		return $evaluation;
+		return $data;
 	}
 
-	public function getBeneficiaryEvaluations($criteria = array())
+	public function findBeneficiaryEvaluations($criteria = array(), $filter = array())
 	{
 		if (empty($criteria) || ! array_key_exists('beneficiaryId', $criteria)) {
 			throw new \Exception('Unknown beneficiary\'s evaluation list with these given criteria');
 		}
-		$evaluations = null;
-		$params = array();
-		$params['beneficiaryId'] = $criteria['beneficiaryId'];
-		$params['finished'] = true;
-		if (array_key_exists('finished', $criteria)) {
-			$params['finished'] = $criteria['finished'];
+		$model = true;
+		if (! empty($filter)) {
+			$criteria = array_merge($criteria, array(
+				'filter' => $filter
+			));
+			if (array_key_exists('model', $filter)) {
+				$model = $filter['model'];
+			}
 		}
-		$evaluations = $this->em->getRepository('AmisureP4SApiBundle:Evaluation')->findBy($params, array(
-			'evaluationDate' => 'DESC'
-		));
-		return $evaluations;
+		$data = null;
+		try {
+			// -- Find data
+			$request = $this->client->get('evaluations', array(), array(
+				'query' => $criteria
+			));
+			$response = $request->send()->json();
+			// - Wrong result
+			if (ResponseHelper::OK != $response['status']) {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+			if (empty($response['data']) || ! array_key_exists('evaluations', $response['data']) || ! is_array($response['data']['evaluations']) || empty($response['data']['evaluations'])) {
+				return null;
+			}
+			// - Good result
+			$data = array();
+			// Model available and requested
+			if (array_key_exists('model', $response['data']) && (true === $model || 'separate' === $model)) {
+				$data['model'] = EvaluationModel::fromJson($response['data']['model']);
+			}
+			// Evaluations available
+			$evaluations = array();
+			$receivedEvaluations = $response['data']['evaluations'];
+			foreach ($receivedEvaluations as $element) {
+				if ('merge' == $model) {
+					$evaluations[] = EvaluationModel::fromJson($element);
+				}
+				else {
+					$evaluations[] = Evaluation::fromJson($element);
+				}
+			}
+			$data['evaluations'] = $evaluations;
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : findBeneficiaryEvaluations()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
+	}
+
+	public function getBeneficiaryEvaluations($criteria = array())
+	{
+		return $this->findBeneficiaryEvaluations($criteria);
 	}
 
 	public function updateBeneficiaryEvaluation($evaluation)
 	{
-		$this->em->persist($evaluation);
-		$this->em->flush();
-		return $evaluation->getId();
+		$data = - 1;
+		try {
+			// -- Find data
+// 			$serializer = new JsonSerializer();
+			$evaluationStr = $evaluation; //$serializer->serialize($evaluation, false);
+			$request = $this->client->post('evaluations', array(), $evaluationStr);
+			$response = $request->send()->json();
+			if (ResponseHelper::OK == $response['status']) {
+				if (! array_key_exists('data', $response)) {
+					return $data;
+				}
+				$data = $response['data'];
+			}
+			else {
+				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : updateBeneficiaryEvaluation()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+		}
+		return $data;
 	}
 }

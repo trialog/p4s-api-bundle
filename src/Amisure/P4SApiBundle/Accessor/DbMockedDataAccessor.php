@@ -39,12 +39,17 @@ class DbMockedDataAccessor extends ADataAccessor
 		$this->container = $container;
 	}
 
-	public function getBeneficiaryList($criteria = array(), $filter = array())
+	public function findBeneficiaries($criteria = array(), $filter = array())
 	{
 		$securityCtx = $this->container->get('security.context');
 		$this->beneficiaryList = $this->em->getRepository('Amisure\P4SApiBundle\Entity\User\BeneficiaryUser')->findByRelatedBeneficiaries($securityCtx->getToken()
 			->getUser());
 		return $this->beneficiaryList;
+	}
+
+	public function getBeneficiaryList($criteria = array(), $filter = array())
+	{
+		return $this->findBeneficiaries($criteria, $filter);
 	}
 
 	public function getBeneficiarySmallProfile($beneficiaryId)
@@ -229,7 +234,7 @@ class DbMockedDataAccessor extends ADataAccessor
 		return $evaluation;
 	}
 
-	public function getBeneficiaryEvaluations($criteria = array())
+	public function findBeneficiaryEvaluations($criteria = array())
 	{
 		if (empty($criteria) || ! array_key_exists('beneficiaryId', $criteria)) {
 			throw new \Exception('Unknown beneficiary\'s evaluation list with these given criteria');
@@ -245,6 +250,11 @@ class DbMockedDataAccessor extends ADataAccessor
 			'evaluationDate' => 'DESC'
 		));
 		return $evaluations;
+	}
+
+	public function getBeneficiaryEvaluations($criteria = array())
+	{
+		return $this->findBeneficiaryEvaluations($criteria);
 	}
 
 	public function updateBeneficiaryEvaluation($evaluation)

@@ -117,12 +117,17 @@ class MockedDataAccessor extends ADataAccessor
 		$this->evaluation2->setServiceId(1);
 	}
 
-	public function getBeneficiaryList()
+	public function findBeneficiaries($criteria = array(), $filter = array())
 	{
 		return array(
 			$this->user1Mini,
 			$this->user2Mini
 		);
+	}
+
+	public function getBeneficiaryList($criteria = array(), $filter = array())
+	{
+		return $this->findBeneficiaries($criteria, $filter);
 	}
 
 	public function getBeneficiarySmallProfile($beneficiaryId)
@@ -190,12 +195,17 @@ class MockedDataAccessor extends ADataAccessor
 		return $this->evaluation1;
 	}
 
-	public function getBeneficiaryEvaluations($criteria = array())
+	public function findBeneficiaryEvaluations($criteria = array())
 	{
 		return array(
 			$this->evaluation1,
 			$this->evaluation2
 		);
+	}
+
+	public function getBeneficiaryEvaluations($criteria = array())
+	{
+		return $this->findBeneficiaryEvaluations($criteria);
 	}
 
 	public function updateBeneficiaryEvaluation($evaluation)

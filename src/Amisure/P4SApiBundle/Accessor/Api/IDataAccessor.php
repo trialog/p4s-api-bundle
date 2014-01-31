@@ -9,13 +9,23 @@ use Amisure\P4SApiBundle\Entity\Event;
  */
 interface IDataAccessor
 {
-	public function getBeneficiaryList($criteria=array(), $filter=array());
+
+	public function findBeneficiaries($criteria = array(), $filter = array());
+
+	/**
+	 * deprecated
+	 * 
+	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::findBeneficiaries
+	 */
+	public function getBeneficiaryList($criteria = array(), $filter = array());
 
 	public function getBeneficiarySmallProfile($beneficiaryId);
 
-	public function getBeneficiary($beneficiaryId, $profileType='FULL');
+	public function getBeneficiary($beneficiaryId, $profileType = 'FULL');
+
 	/**
-	 * @deprecated
+	 * deprecated
+	 *
 	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::getBeneficiary
 	 */
 	public function getBeneficiaryProfile($beneficiaryId);
@@ -30,6 +40,13 @@ interface IDataAccessor
 
 	public function getBeneficiaryEvaluation($criteria = array());
 
+	public function findBeneficiaryEvaluations($criteria = array(), $filter = array());
+
+	/**
+	 * deprecated
+	 * 
+	 * @see Amisure\P4SApiBundle\Accessor\Api\IDataAccessor::findBeneficiaryEvaluations
+	 */
 	public function getBeneficiaryEvaluations($criteria = array());
 
 	public function updateBeneficiaryEvaluation($evaluation);
