@@ -22,11 +22,6 @@ abstract class AUser extends SessionUser
 	private $address;
 
 	/**
-	 * @ORM\Column(type="string", length=10)
-	 */
-	private $zipcode;
-
-	/**
 	 * @ORM\Column(type="string", length=120)
 	 */
 	private $city;
@@ -73,7 +68,7 @@ abstract class AUser extends SessionUser
 	 */
 	public function __construct($params, $role, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '')
 	{
-		parent::__construct($params, $firstname, $lastname);
+		parent::__construct($params, $firstname, $lastname, '');
 		// From Array
 		if (is_array($params)) {
 			extract($params);
@@ -141,37 +136,6 @@ abstract class AUser extends SessionUser
 			$this->setCity(@$address['city']);
 			$this->setCountry(@$address['country']);
 		}
-		return $this;
-	}
-
-	/**
-	 *
-	 * @return string
-	 */
-	public function getZipcode()
-	{
-		return $this->zipcode;
-	}
-
-	/**
-	 *
-	 * @return string Example : 94 or 77 or 20
-	 */
-	public function getDepartementCode()
-	{
-		if (null != $this->zipcode) {
-			return substr($this->zipcode, 0, 2);
-		}
-		return '%';
-	}
-
-	/**
-	 *
-	 * @param string $zipcode        	
-	 */
-	public function setZipcode($zipcode)
-	{
-		$this->zipcode = $zipcode;
 		return $this;
 	}
 

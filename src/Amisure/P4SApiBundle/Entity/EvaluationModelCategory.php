@@ -198,30 +198,6 @@ class EvaluationModelCategory
 		return $this;
 	}
 
-	public function getItemById($itemId)
-	{
-		foreach ($this->items as $item) {
-			if ($item->getItemId() == $itemId) {
-				return $item;
-			}
-		}
-		return null;
-	}
-
-	public function getResponseById($itemId, $responseId)
-	{
-		foreach ($this->items as $item) {
-			if ($item->getItemId() == $itemId) {
-				foreach ($item->getResponses() as $response) {
-					if ($response->getResponseId() == $responseId) {
-						return $response;
-					}
-				}
-			}
-		}
-		return null;
-	}
-
 	public function getEvaluation()
 	{
 		return $this->evaluation;

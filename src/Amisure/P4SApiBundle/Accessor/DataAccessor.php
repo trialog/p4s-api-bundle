@@ -9,7 +9,7 @@ use Amisure\P4SApiBundle\Entity\User\UserConstants;
 use Amisure\P4SApiBundle\Entity\Event;
 use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Entity\EventRecurrence;
-use Amisure\P4SApiBundle\Accessor\Api\ResponseHelper;
+use Amisure\P4SApiBundle\Accessor\Api\StatusConstants;
 use Guzzle\Http\Client;
 use Amisure\P4SApiBundle\Entity\Organization;
 use Amisure\P4SApiBundle\Entity\Evaluation;
@@ -68,14 +68,14 @@ class DataAccessor extends ADataAccessor
 				)
 			));
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				foreach ($response['beneficiaries'] as $beneficiary) {
 					$data[] = BeneficiaryUser::fromJson($beneficiary);
 				}
 			}
 			else {
 				if ($filter['exception']) {
-					throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+					throw new \Exception(@$response['message'] . @$response['data']['message'], StatusConstants::toCode($response['status']));
 				}
 				else {
 					return null;
@@ -83,7 +83,7 @@ class DataAccessor extends ADataAccessor
 			}
 		} catch (\Exception $e) {
 			if ($filter['exception']) {
-				throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryList()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+				throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryList()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 			}
 			else {
 				return null;
@@ -123,14 +123,14 @@ class DataAccessor extends ADataAccessor
 				)
 			));
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				$data = BeneficiaryUser::fromJson($response['beneficiary']);
 			}
 			else {
-				throw new \Exception(@$response['message'] . @$response['data']['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception(@$response['message'] . @$response['data']['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiary()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiary()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -158,7 +158,7 @@ class DataAccessor extends ADataAccessor
 				throw new \Exception('Unknown beneficiary\'s contact with these given criteria');
 			}
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				if (empty($response['data'])) {
 					return null;
 				}
@@ -168,10 +168,10 @@ class DataAccessor extends ADataAccessor
 				}
 			}
 			else {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getOrganizationUserProfile()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : getOrganizationUserProfile()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -191,17 +191,19 @@ class DataAccessor extends ADataAccessor
 				'query' => $criteria
 			));
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				$data = array();
-				foreach ($response['data'] as $org) {
-					$data[] = Organization::fromJson($org);
+				if (isset($response['data']) && ! empty($response['data'])) {
+					foreach ($response['data'] as $org) {
+						$data[] = Organization::fromJson($org);
+					}
 				}
 			}
 			else {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : findOrganizations()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : findOrganizations()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -314,8 +316,8 @@ class DataAccessor extends ADataAccessor
 			));
 			$response = $request->send()->json();
 			// - Wrong result
-			if (ResponseHelper::OK != $response['status']) {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 			if (empty($response['data']) || ! array_key_exists('evaluation', $response['data']) || ! is_array($response['data']['evaluation']) || empty($response['data']['evaluation'])) {
 				return null;
@@ -337,7 +339,7 @@ class DataAccessor extends ADataAccessor
 				$data['evaluation'] = Evaluation::fromJson($response['data']['evaluation']);
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryEvaluation()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryEvaluation()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -364,8 +366,8 @@ class DataAccessor extends ADataAccessor
 			));
 			$response = $request->send()->json();
 			// - Wrong result
-			if (ResponseHelper::OK != $response['status']) {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 			if (empty($response['data']) || ! array_key_exists('evaluations', $response['data']) || ! is_array($response['data']['evaluations']) || empty($response['data']['evaluations'])) {
 				return null;
@@ -389,7 +391,7 @@ class DataAccessor extends ADataAccessor
 			}
 			$data['evaluations'] = $evaluations;
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : findBeneficiaryEvaluations()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : findBeneficiaryEvaluations()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -408,17 +410,17 @@ class DataAccessor extends ADataAccessor
 			$evaluationStr = $serializer->serialize($evaluation, false);
 			$request = $this->client->post('evaluations', array(), $evaluationStr);
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				if (! array_key_exists('data', $response)) {
 					return $data;
 				}
 				$data = $response['data'];
 			}
 			else {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : updateBeneficiaryEvaluation()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : updateBeneficiaryEvaluation()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -435,8 +437,8 @@ class DataAccessor extends ADataAccessor
 			$request = $this->client->get('evaluations/model/' . $code);
 			$response = $request->send()->json();
 			// - Wrong result
-			if (ResponseHelper::OK != $response['status']) {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 			if (! array_key_exists('data', $response) || empty($response['data']) || ! is_array($response['data'])) {
 				return null;
@@ -444,7 +446,7 @@ class DataAccessor extends ADataAccessor
 			// - Good result
 			$data = EvaluationModel::fromJson($response['data']);
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModel()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModel()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}
@@ -456,17 +458,73 @@ class DataAccessor extends ADataAccessor
 			// -- Find data
 			$request = $this->client->get('evaluations/codes');
 			$response = $request->send()->json();
-			if (ResponseHelper::OK == $response['status']) {
+			if (StatusConstants::OK == $response['status']) {
 				if (! array_key_exists('data', $response)) {
 					return $data;
 				}
 				$data = $response['data'];
 			}
 			else {
-				throw new \Exception($response['message'], ResponseHelper::toCode($response['status']));
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModelCodes()', ResponseHelper::toCode(ResponseHelper::UNKNOWN_ISSUE), $e);
+			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModelCodes()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+		}
+		return $data;
+	}
+	
+	public function createLink($linkType, $beneficiaryId, $linkedElementId)
+	{
+		$data = false;
+		try {
+			// -- Create params
+			$params = array('link_type' => $linkType);
+			if ('WITH_ORGANIZATION' == $linkType) {
+				$params['organization_id'] = $linkedElementId;
+			}
+			elseif ('WITH_HOME_HELPER' == $linkType) {
+				$params['home_helper_id'] = $linkedElementId;
+			}
+			
+			// -- Find data
+			$request = $this->client->post('beneficiaries/'.$beneficiaryId.'/links', $params);
+			$response = $request->send()->json();
+			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::LINK_ALREADY_CREATED ==  $response['status'])) {
+				$data = true;
+			}
+			else {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : createLink()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+		}
+		return $data;
+	}
+	
+	public function removeLink($linkType, $beneficiaryId, $linkedElementId)
+	{
+		$data = false;
+		try {
+			// -- Create params
+			$params = array('link_type' => $linkType);
+			if ('WITH_ORGANIZATION' == $linkType) {
+				$params['organization_id'] = $linkedElementId;
+			}
+			elseif ('WITH_HOME_HELPER' == $linkType) {
+				$params['home_helper_id'] = $linkedElementId;
+			}
+				
+			// -- Find data
+			$request = $this->client->delete('beneficiaries/'.$beneficiaryId.'/links', $params);
+			$response = $request->send()->json();
+			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::NOT_FOUND ==  $response['status'])) {
+				$data = true;
+			}
+			else {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de l\'appel au P4S : createLink()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
 		}
 		return $data;
 	}

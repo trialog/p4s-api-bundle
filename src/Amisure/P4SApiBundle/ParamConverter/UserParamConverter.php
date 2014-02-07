@@ -20,10 +20,13 @@ class UserParamConverter implements ParamConverterInterface
 
 	protected $accessor;
 
-	public function __construct(IDataAccessor $accessor)
+	protected $em;
+
+	public function __construct(IDataAccessor $accessor, $em)
 	{
 		$this->class = 'Amisure\\P4SApiBundle\\Entity\\User\\SessionUser';
 		$this->accessor = $accessor;
+		$this->em = $em;
 	}
 
 	function supports(ConfigurationInterface $configuration)
@@ -33,9 +36,17 @@ class UserParamConverter implements ParamConverterInterface
 
 	function apply(Request $request, ConfigurationInterface $configuration)
 	{
-		$user = $this->accessor->getBeneficiaryProfile($request->get('beneficiaryId'));
-		if (null == $user) {
-			throw new NotFoundResourceException('BeneficiaryUser[id=' . $request->get('beneficiaryId') . '] inexistant');
+		if ($configuration->getClass() == 'Amisure\\P4SApiBundle\\Entity\\User\\BeneficiaryUser') {
+			$user = $this->accessor->getBeneficiaryProfile($request->get('beneficiaryId'));
+			if (null == $user) {
+				throw new NotFoundResourceException('BeneficiaryUser[id=' . $request->get('beneficiaryId') . '] inexistant');
+			}
+		}
+		else {
+			$user = $this->em->find('Amisure\\P4SApiBundle\\Entity\\User\\SessionUser', $request->get('beneficiaryId'));
+			if (null == $user) {
+				throw new NotFoundResourceException('SessionUser[id=' . $request->get('beneficiaryId') . '] inexistant');
+			}
 		}
 		$request->attributes->set($configuration->getName(), $user);
 		return true; // Don't use an other ParamConverter after this one

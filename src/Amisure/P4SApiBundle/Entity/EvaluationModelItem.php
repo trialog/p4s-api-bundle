@@ -63,10 +63,10 @@ class EvaluationModelItem
 
 	public function __construct($label = '', $responseType = EvaluationModelItem::ResponseTypeInput, $itemId = -1, $id = -1)
 	{
+		$this->setId($id);
 		$this->setLabel($label);
 		$this->setResponseType($responseType);
 		$this->setItemId($itemId);
-		$this->setId($id);
 		$this->responses = new ArrayCollection();
 	}
 
@@ -200,7 +200,7 @@ class EvaluationModelItem
 		}
 		$responses = array();
 		foreach ($this->responses as $response) {
-			if (null != $response && true === $response->getSelected()) {
+			if (null != $response && true == @$response->selected) {
 				$responses[] = $response;
 			}
 		}

@@ -58,4 +58,32 @@ interface IDataAccessor
 	public function getOrganizationUserProfile($userId);
 
 	public function findOrganizations($criteria = array());
+
+	/**
+	 * Create a link between a beneficiary and an organization or a home helper
+	 *
+	 * @param string $linkType
+	 *        	WITH_ORGANIZATION or WITH_HOME_HELPER
+	 * @param string $beneficiaryId
+	 *        	Id of the beneficiary
+	 * @param string $linkedElementId
+	 *        	Id of the organization or the home helper, depending of $linkType value
+	 * @return True in case of success, false otherwize. Actually, it will certainly throw an exception if it failed for good reasons
+	 * @throws \Exception if it failed for a reason
+	 */
+	public function createLink($linkType, $beneficiaryId, $linkedElementId);
+
+	/**
+	 * Remove a link between a beneficiary and an organization or a home helper
+	 *
+	 * @param string $linkType
+	 *        	WITH_ORGANIZATION or WITH_HOME_HELPER
+	 * @param string $beneficiaryId
+	 *        	Id of the beneficiary
+	 * @param string $linkedElementId
+	 *        	Id of the organization or the home helper, depending of $linkType value
+	 * @return True in case of success, false otherwize. Actually, it will certainly throw an exception if it failed for good reasons
+	 * @throws \Exception if it failed for a reason
+	 */
+	public function remvoeLink($linkType, $beneficiaryId, $linkedElementId);
 }

@@ -37,18 +37,16 @@ class OrganizationUser extends AUser
 	 * @param string $fax        	
 	 * @param string $organizationType        	
 	 */
-	public function __construct($params, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '', $organizationType = '', $role = 'ROLE_ORG_ADMIN_USER', $subRole = '')
+	public function __construct($params, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '',  $organizationType= '', $role = 'ROLE_ORG_ADMIN_USER', $subRole = '')
 	{
 		parent::__construct($params, $role, $gender, $firstname, $lastname, $address, $email, $tel1, $tel2, $fax);
 		// From Array
 		if (is_array($params)) {
 			extract($params);
-			$this->setOrganizationType(@$organizationType);
 			$this->setSubRole(@$subRole);
 			return;
 		}
 		// From flat data
-		$this->setOrganizationType($organizationType);
 		$this->setSubRole($subRole);
 		
 		$this->beneficiaries = new ArrayCollection();

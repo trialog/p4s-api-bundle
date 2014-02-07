@@ -58,6 +58,11 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 	private $organizationType;
 
 	/**
+	 * @ORM\Column(type="string", length=10)
+	 */
+	private $zipcode;
+
+	/**
 	 * @ORM\Column(name="is_active", type="boolean")
 	 */
 	private $isActive;
@@ -76,7 +81,7 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 	 */
 	private $events;
 
-	public function __construct($params = '', $firstname = '', $lastname = '')
+	public function __construct($params = '', $firstname = '', $lastname = '', $organizationType = '', $zipcode = '')
 	{
 		// From Array
 		if (is_array($params)) {
@@ -84,12 +89,16 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 			$this->setUsername(@$username);
 			$this->setFirstname(@$firstname);
 			$this->setLastname(@$lastname);
+			$this->setOrganizationType(@$organizationType);
+			$this->setZipcode(@$zipcode);
 			return;
 		}
 		// From flat data
 		$this->setUsername($params);
 		$this->setFirstname($firstname);
 		$this->setLastname($lastname);
+		$this->setOrganizationType($organizationType);
+		$this->setZipcode($zipcode);
 		
 		$this->isActive = true;
 		$this->salt = ''; // md5(uniqid(null, true));
@@ -188,6 +197,17 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 	public function setOrganizationType($organizationType)
 	{
 		$this->organizationType = $organizationType;
+		return $this;
+	}
+
+	public function getZipcode()
+	{
+		return $this->zipcode;
+	}
+
+	public function setZipcode($zipcode)
+	{
+		$this->zipcode = $zipcode;
 		return $this;
 	}
 
@@ -301,9 +321,9 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 		}
 		return false;
 	}
-	
-	public function __toString() 
+
+	public function __toString()
 	{
-		return 'SessionUser[id='.$this->id.' , firstname='.$this->getFirstname().', lastname='.$this->getLastname().']';
+		return 'SessionUser[id=' . $this->id . ' , firstname=' . $this->getFirstname() . ', lastname=' . $this->getLastname() . ']';
 	}
 }

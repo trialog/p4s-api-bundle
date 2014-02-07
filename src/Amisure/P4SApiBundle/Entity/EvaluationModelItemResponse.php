@@ -39,6 +39,7 @@ class EvaluationModelItemResponse
 	 * @var string
 	 */
 	private $type;
+	
 
 	/**
 	 * @ORM\Column(type="boolean")
@@ -71,11 +72,11 @@ class EvaluationModelItemResponse
 
 	public function __construct($value = '', $label = '', $type = EvaluationModelItemResponse::TypeString, $responseId = -1, $id = -1, $selected = false)
 	{
+		$this->setId($id);
+		$this->setResponseId($responseId);
 		$this->setValue($value);
 		$this->setLabel($label);
 		$this->setType($type);
-		$this->setResponseId($responseId);
-		$this->setId($id);
 		$this->setSelected($selected);
 	}
 
@@ -203,16 +204,5 @@ class EvaluationModelItemResponse
 	public function setEvaluationItem(\Amisure\P4SApiBundle\Entity\EvaluationModelItem $item)
 	{
 		return $this->setItem($item);
-	}
-
-	public function getSelected()
-	{
-		return $this->selected;
-	}
-
-	public function setSelected($selected)
-	{
-		$this->selected = $selected;
-		return $this;
 	}
 }
