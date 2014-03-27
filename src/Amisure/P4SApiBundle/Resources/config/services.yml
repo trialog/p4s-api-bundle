@@ -25,7 +25,7 @@ services:
 
     p4s.paramconverter.user:
         class: Amisure\P4SApiBundle\ParamConverter\UserParamConverter
-        arguments: [@p4s.accessor]
+        arguments: [@p4s.accessor, @doctrine.orm.entity_manager]
         tags:
             - { name: request.param_converter, priority: 20 }
 

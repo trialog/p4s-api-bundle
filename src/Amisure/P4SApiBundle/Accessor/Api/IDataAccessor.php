@@ -85,5 +85,5 @@ interface IDataAccessor
 	 * @return True in case of success, false otherwize. Actually, it will certainly throw an exception if it failed for good reasons
 	 * @throws \Exception if it failed for a reason
 	 */
-	public function remvoeLink($linkType, $beneficiaryId, $linkedElementId);
+	public function removeLink($linkType, $beneficiaryId, $linkedElementId);
 }

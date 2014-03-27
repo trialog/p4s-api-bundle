@@ -7,14 +7,15 @@ use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Amisure\P4SApiBundle\Entity\User\UserConstants;
 use Amisure\P4SApiBundle\Entity\Event;
-use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Entity\EventRecurrence;
+use Amisure\P4SApiBundle\Accessor\Api\ADataAccessor;
 use Amisure\P4SApiBundle\Accessor\Api\StatusConstants;
 use Guzzle\Http\Client;
 use Amisure\P4SApiBundle\Entity\Organization;
 use Amisure\P4SApiBundle\Entity\Evaluation;
 use Amisure\P4SApiBundle\Entity\EvaluationModel;
 use Zumba\Util\JsonSerializer;
+use Amisure\P4SApiBundle\Accessor\Api\LinkConstants;
 
 /**
  * Accessor for the P4S data
@@ -369,7 +370,7 @@ class DataAccessor extends ADataAccessor
 			if (StatusConstants::OK != $response['status']) {
 				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
-			if (empty($response['data']) || ! array_key_exists('evaluations', $response['data']) || ! is_array($response['data']['evaluations']) || empty($response['data']['evaluations'])) {
+			if (empty($response['data']) || ! isset($response['data']['evaluations']) || ! is_array($response['data']['evaluations']) || empty($response['data']['evaluations'])) {
 				return null;
 			}
 			// - Good result
@@ -446,7 +447,7 @@ class DataAccessor extends ADataAccessor
 			// - Good result
 			$data = EvaluationModel::fromJson($response['data']);
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModel()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+			throw new \Exception('Erreur lors de la recherche du modèle d\'évaluation.', StatusConstants::toCode($e->getCode()), $e);
 		}
 		return $data;
 	}
@@ -468,63 +469,69 @@ class DataAccessor extends ADataAccessor
 				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getEvaluationModelCodes()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+			throw new \Exception('Erreur lors la récupération de la liste des modèles d\'évaluation.', StatusConstants::toCode($e->getCode()), $e);
 		}
 		return $data;
 	}
-	
+
 	public function createLink($linkType, $beneficiaryId, $linkedElementId)
 	{
 		$data = false;
 		try {
 			// -- Create params
-			$params = array('link_type' => $linkType);
-			if ('WITH_ORGANIZATION' == $linkType) {
+			$params = array(
+				'link_type' => $linkType
+			);
+			if (LinkConstants::WITH_ORGANIZATION == $linkType) {
 				$params['organization_id'] = $linkedElementId;
 			}
-			elseif ('WITH_HOME_HELPER' == $linkType) {
+			elseif (LinkConstants::WITH_HOME_HELPER == $linkType) {
 				$params['home_helper_id'] = $linkedElementId;
 			}
 			
 			// -- Find data
-			$request = $this->client->post('beneficiaries/'.$beneficiaryId.'/links', $params);
+			$request = $this->client->post('beneficiaries/' . $beneficiaryId . '/links', $params);
 			$response = $request->send()->json();
-			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::LINK_ALREADY_CREATED ==  $response['status'])) {
-				$data = true;
+			// - Wrong result
+			if (null == $response || ! isset($response['status'])) {
+				throw new \Exception($response['message'], StatusConstants::UNKNWON_ERROR);
 			}
-			else {
+			if (StatusConstants::OK != $response['status'] && StatusConstants::LINK_ALREADY_CREATED != $response['status']) {
 				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
+			$data = true;
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : createLink()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+			throw new \Exception('Erreur lors de la création du lien.', StatusConstants::toCode($e->getCode()), $e);
 		}
 		return $data;
 	}
-	
+
 	public function removeLink($linkType, $beneficiaryId, $linkedElementId)
 	{
 		$data = false;
 		try {
 			// -- Create params
-			$params = array('link_type' => $linkType);
-			if ('WITH_ORGANIZATION' == $linkType) {
+			$params = array(
+				'link_type' => $linkType
+			);
+			if (LinkConstants::WITH_ORGANIZATION == $linkType) {
 				$params['organization_id'] = $linkedElementId;
 			}
-			elseif ('WITH_HOME_HELPER' == $linkType) {
+			elseif (LinkConstants::WITH_HOME_HELPER == $linkType) {
 				$params['home_helper_id'] = $linkedElementId;
 			}
-				
+			
 			// -- Find data
-			$request = $this->client->delete('beneficiaries/'.$beneficiaryId.'/links', $params);
+			$request = $this->client->delete('beneficiaries/' . $beneficiaryId . '/links', $params);
 			$response = $request->send()->json();
-			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::NOT_FOUND ==  $response['status'])) {
+			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::NOT_FOUND == $response['status'])) {
 				$data = true;
 			}
 			else {
 				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : createLink()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+			throw new \Exception('Erreur lors de la suppression lien.', StatusConstants::toCode($e->getCode()), $e);
 		}
 		return $data;
 	}

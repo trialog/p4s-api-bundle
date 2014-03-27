@@ -1,5 +1,5 @@
 <?php
-namespace Amisure\P4SApiBundle\Entity;
+namespace Amisure\P4SApiBundle\Accessor\Api;
 
 /**
  *
@@ -39,7 +39,7 @@ class StatusConstants
 		StatusConstants::UNKNOWN_USER,
 		StatusConstants::UNAUTHORIZED,
 		StatusConstants::NOT_EXIST,
-		StatusConstants::UNKNWON_ERROR,
+// 		StatusConstants::UNKNWON_ERROR,
 		StatusConstants::MISSING_IMPLEMENTATION,
 		StatusConstants::BAD_PARAMETERS,
 		StatusConstants::LINK_ALREADY_CREATED

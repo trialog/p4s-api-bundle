@@ -200,7 +200,7 @@ class EvaluationModelItem
 		}
 		$responses = array();
 		foreach ($this->responses as $response) {
-			if (null != $response && true == @$response->selected) {
+			if (null != $response && true == @$response->getSelected()) {
 				$responses[] = $response;
 			}
 		}
