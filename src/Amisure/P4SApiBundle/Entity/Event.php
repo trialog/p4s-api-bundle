@@ -5,11 +5,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints\Collection;
 use Amisure\P4SApiBundle\Entity\User\SessionUser;
+use Amisure\P4SApiBundle\Entity\User\UserConstants;
 
 /**
  * @ORM\Table(name="s1_event")
  * @ORM\Entity(repositoryClass="Amisure\P4SApiBundle\Entity\EventRepository")
- * @ORM\HasLifecycleCallbacks
  */
 class Event
 {
@@ -31,6 +31,16 @@ class Event
 	 * @ORM\Column(type="text")
 	 */
 	private $object;
+
+	/**
+	 * @ORM\Column(type="text")
+	 */
+	private $description;
+
+	/**
+	 * @ORM\Column(type="text")
+	 */
+	private $location;
 
 	/**
 	 * Beginning of the event
@@ -62,10 +72,12 @@ class Event
 	 */
 	private $parent;
 
-	public function __construct($object = '')
+	public function __construct($object = '', $description = '', $location = '')
 	{
 		$this->setId(- 1);
 		$this->setObject($object);
+		$this->setDescription($description);
+		$this->setLocation($location);
 		$this->dateStart = new \DateTime();
 		$this->dateStart->add(new \DateInterval('P1D'));
 		$this->dateStart->setTime($this->dateStart->format('H'), ($this->dateStart->format('i') - ($this->dateStart->format('i') % 15)), $this->dateStart->format('s'));
@@ -74,6 +86,35 @@ class Event
 		$this->dateEnd->setTime($this->dateEnd->format('H'), ($this->dateEnd->format('i') - ($this->dateEnd->format('i') % 15)), $this->dateEnd->format('s'));
 		$this->participants = new ArrayCollection();
 		$this->childs = new ArrayCollection();
+	}
+
+	public function toArray()
+	{
+		$event = array();
+		if (!empty($this->id) && -1 != $this->id) {
+			$event['id'] = $this->id;
+		}
+		$event['start_date'] = $this->getDateStart()->getTimestamp();
+		$event['end_date'] = $this->getDateEnd()->getTimestamp();
+		$event['object'] = $this->object;
+		$event['description'] = $this->getDescription();
+		$event['place'] = $this->getLocation();
+		if (null != $this->getRecurrence()) {
+			$event['recurrence'] = $this->getRecurrence()->getType();
+			$event['frequency'] = $this->getRecurrence()->getFrequency();
+			$event['occ_nbr'] = $this->getRecurrence()->getNb();
+		}
+		$event['participants'] = array();
+		foreach ($this->participants as $participant) {
+			$participantArray = array();
+			$participantArray['id'] = $participant->getUsername();
+			$participantArray['role'] = $participant->getBusinessRole();
+			if (UserConstants::ROLE_BENEFICIARY == $participantArray['role']) {
+				continue;
+			}
+			$event['participants'][] = $participantArray;
+		}
+		return $event;
 	}
 
 	public function getId()
@@ -107,7 +148,7 @@ class Event
 	{
 		if (! $this->participants->contains($participant)) {
 			$this->participants->add($participant);
-			$participant->addEvent($this);
+			// $participant->addEvent($this);
 		}
 		return $this;
 	}
@@ -146,9 +187,12 @@ class Event
 		return $this->dateStart;
 	}
 
-	public function setDateStart(\DateTime $dateStart)
+	public function setDateStart($date)
 	{
-		$this->dateStart = $dateStart;
+		if (null != $date && '' != $date && ! ($date instanceof \DateTime)) {
+			$date = new \DateTime('@' . $date);
+		}
+		$this->dateStart = $date;
 		return $this;
 	}
 
@@ -157,9 +201,12 @@ class Event
 		return $this->dateEnd;
 	}
 
-	public function setDateEnd(\DateTime $dateEnd)
+	public function setDateEnd($date)
 	{
-		$this->dateEnd = $dateEnd;
+		if (null != $date && '' != $date && ! ($date instanceof \DateTime)) {
+			$date = new \DateTime('@' . $date);
+		}
+		$this->dateEnd = $date;
 		return $this;
 	}
 
@@ -232,10 +279,6 @@ class Event
 		return $this;
 	}
 
-	/**
-	 * @ORM\PrePersist()
-	 * @ORM\PreUpdate()
-	 */
 	public function computeDateEnd()
 	{
 		if (null === $this->getDateStart()) {
@@ -246,5 +289,27 @@ class Event
 		$dateEnd = new \DateTime($this->getDateStart()->format('Y-m-d H:i:sP'));
 		$dateEnd->add(\DateInterval::createFromDateString($hourDurationStr));
 		$this->setDateEnd($dateEnd);
+	}
+
+	public function getDescription()
+	{
+		return $this->description;
+	}
+
+	public function setDescription($description)
+	{
+		$this->description = $description;
+		return $this;
+	}
+
+	public function getLocation()
+	{
+		return $this->location;
+	}
+
+	public function setLocation($location)
+	{
+		$this->location = $location;
+		return $this;
 	}
 }

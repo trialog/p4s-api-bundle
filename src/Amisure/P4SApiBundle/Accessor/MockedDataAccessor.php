@@ -167,7 +167,7 @@ class MockedDataAccessor extends ADataAccessor
 		return $profile;
 	}
 
-	public function getBeneficiaryEvent($criteria = array())
+	public function getBeneficiaryEvent($beneficiaryId, $eventId)
 	{
 		return $this->event1;
 	}
@@ -180,7 +180,7 @@ class MockedDataAccessor extends ADataAccessor
 		);
 	}
 
-	public function updateBeneficiaryEvent($event)
+	public function updateBeneficiaryEvent($beneficiaryId, $event)
 	{
 		return 0;
 	}

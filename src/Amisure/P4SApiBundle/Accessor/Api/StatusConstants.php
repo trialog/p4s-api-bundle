@@ -22,7 +22,9 @@ class StatusConstants
 
 	const UNAUTHORIZED = 'UNAUTHORIZED';
 
-	const NOT_EXIST = 'NOT_EXIST';
+	const NOT_EXIST = 'NOT_FOUND';
+
+	const NOT_FOUND = 'NOT_FOUND';
 
 	const MISSING_IMPLEMENTATION = 'MISSING_IMPLEMENTATION';
 
@@ -39,9 +41,10 @@ class StatusConstants
 		StatusConstants::UNKNOWN_USER,
 		StatusConstants::UNAUTHORIZED,
 		StatusConstants::NOT_EXIST,
-// 		StatusConstants::UNKNWON_ERROR,
+		// StatusConstants::UNKNWON_ERROR,
 		StatusConstants::MISSING_IMPLEMENTATION,
 		StatusConstants::BAD_PARAMETERS,
+		StatusConstants::NOT_FOUND,
 		StatusConstants::LINK_ALREADY_CREATED
 	);
 

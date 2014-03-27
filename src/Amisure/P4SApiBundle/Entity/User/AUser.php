@@ -66,9 +66,9 @@ abstract class AUser extends SessionUser
 	 * @param string $tel2        	
 	 * @param string $fax        	
 	 */
-	public function __construct($params, $role, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '')
+	public function __construct($params, $role, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '', $organizationId='')
 	{
-		parent::__construct($params, $firstname, $lastname, '');
+		parent::__construct($params, $firstname, $lastname, $organizationId);
 		// From Array
 		if (is_array($params)) {
 			extract($params);

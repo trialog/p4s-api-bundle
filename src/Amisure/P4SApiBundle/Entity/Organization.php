@@ -144,24 +144,29 @@ class Organization
 
 	public function getOrganizationInfo()
 	{
-		$str = '<strong>' . $this->name . '</strong>';
-		if (! empty($this->website) || ! empty($this->contact)) {
-			$str .= '<small>';
-			if (! empty($this->website)) {
-				$str .= '<br /><strong>Site Web&#160;:</strong>&#160;<a href="' . $this->website . '" title="Site Web de ' . str_replace('"', '&quot;', $this->name) . '">' . $this->website . '</a>';
-			}
-			if (! empty($this->contact)) {
-				$str .= '<br /><strong>Contact&#160;&#160;&#160;:</strong>&#160;' . $this->contact->getFullname();
-				$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Tél : ' . $this->contact->getTel1() . ('' != $this->contact->getTel2() ? ' | ' . $this->contact->getTel2() : '') . ('' != $this->contact->getFax() ? ' | ' . $this->contact->getFax() : '');
-				if ('' != $this->contact->getEmail()) {
-					$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Email : ' . $this->contact->getEmail();
-				}
-				if ('' != $this->contact->getAddress()) {
-					$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Adresse : ' . $this->contact->getFullAddress();
-				}
-			}
-			$str .= '</small>';
+		$str = ''; // '<strong>' . $this->name . '</strong>';
+		$str .= '<small>';
+		if (! empty($this->website)) {
+			$str .= '<br /><strong>Site Web&#160;:</strong>&#160;<a href="' . $this->website . '" title="Site Web de ' . str_replace('"', '&quot;', $this->name) . '">' . $this->website . '</a>';
 		}
+		$str .= '<br />Tél : ' . @$this->getTel() . ('' != $this->getFax() ? ' | ' . $this->getFax() : '');
+		if ('' != $this->getEmail()) {
+			$str .= '<br />Email : ' . $this->getEmail();
+		}
+		if ('' != $this->getAddress()) {
+			$str .= '<br />Adresse : ' . $this->getFullAddress();
+		}
+		if (! empty($this->contact)) {
+			$str .= '<br /><strong>Contact&#160;&#160;&#160;:</strong>&#160;' . $this->contact->getFullname();
+			$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Tél : ' . $this->contact->getTel1() . ('' != $this->contact->getTel2() ? ' | ' . $this->contact->getTel2() : '') . ('' != $this->contact->getFax() ? ' | ' . $this->contact->getFax() : '');
+			if ('' != $this->contact->getEmail()) {
+				$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Email : ' . $this->contact->getEmail();
+			}
+			if ('' != $this->contact->getAddress()) {
+				$str .= '<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Adresse : ' . $this->contact->getFullAddress();
+			}
+		}
+		$str .= '</small>';
 		return $str;
 	}
 
@@ -269,6 +274,17 @@ class Organization
 			$this->setCountry(@$address['country']);
 		}
 		return $this;
+	}
+
+	/**
+	 *
+	 * @param boolean $withCountry
+	 *        	True to also add the country. False by default
+	 * @return string Fill address : 25 avenue du Général Foy, 75008 Paris
+	 */
+	public function getFullAddress($withCountry = false)
+	{
+		return $this->getAddress() . "\n" . $this->getZipcode() . ' ' . $this->getCity() . ($withCountry ? "\n" . $this->getCountry() : '');
 	}
 
 	public function getZipcode()

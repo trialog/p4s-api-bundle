@@ -126,16 +126,9 @@ class DbMockedDataAccessor extends ADataAccessor
 		return $organizations;
 	}
 
-	public function getBeneficiaryEvent($criteria = array())
+	public function getBeneficiaryEvent($beneficiaryId, $eventId)
 	{
-		if (empty($criteria) || (! array_key_exists('id', $criteria) && ! array_key_exists('beneficiaryId', $criteria))) {
-			throw new \Exception('Unknown beneficiary\'s event with these given criteria');
-		}
-		$event = null;
-		// Find most recent evaluation of this beneficiary
-		if (array_key_exists('id', $criteria) && - 1 != $criteria['id']) {
-			$event = $this->em->getRepository('AmisureP4SApiBundle:Event')->find($criteria['id']);
-		}
+		$event = $this->em->getRepository('AmisureP4SApiBundle:Event')->find($eventId);
 		return $event;
 	}
 
@@ -148,7 +141,7 @@ class DbMockedDataAccessor extends ADataAccessor
 		return $events;
 	}
 
-	public function updateBeneficiaryEvent($event)
+	public function updateBeneficiaryEvent($beneficiaryId, $event)
 	{
 		// Create sub-events
 		$recurrence = $event->getRecurrence();

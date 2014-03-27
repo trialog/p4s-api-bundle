@@ -414,6 +414,7 @@ class EvaluationModel
 		$element->setAppId(@$data['appId']);
 		$element->setState(@$data['state']);
 		$element->setDate(@$data['date']);
+		$element->setObject(@$data['object']);
 		$element->setLastUpdate(@$data['lastUpdate']);
 		if (array_key_exists('categories', $data) && is_array($data['categories']) && ! empty($data['categories'])) {
 			foreach ($data['categories'] as $cat) {

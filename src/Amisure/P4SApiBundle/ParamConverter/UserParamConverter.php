@@ -43,7 +43,7 @@ class UserParamConverter implements ParamConverterInterface
 			}
 		}
 		else {
-			$user = $this->em->find('Amisure\\P4SApiBundle\\Entity\\User\\SessionUser', $request->get('beneficiaryId'));
+			$user = $this->em->getRepository('Amisure\\P4SApiBundle\\Entity\\User\\SessionUser')->findOneBy(array('username' => $request->get('beneficiaryId')));
 			if (null == $user) {
 				throw new NotFoundResourceException('SessionUser[id=' . $request->get('beneficiaryId') . '] inexistant');
 			}

@@ -58,8 +58,8 @@ class DataAccessor extends ADataAccessor
 		if (! array_key_exists('profile_type', $filter)) {
 			$filter['profile_type'] = 'FULL';
 		}
-		if (! array_key_exists('exception', $filter)) {
-			$filter['exception'] = true;
+		if (! isset($filter['exception'])) {
+			$filter['exception'] = false;
 		}
 		$data = array();
 		try {
@@ -84,7 +84,7 @@ class DataAccessor extends ADataAccessor
 			}
 		} catch (\Exception $e) {
 			if ($filter['exception']) {
-				throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryList()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+				throw new \Exception('Erreur lors de la recherche de bénéficiaires.', StatusConstants::toCode($e->getCode()), $e);
 			}
 			else {
 				return null;
@@ -124,14 +124,16 @@ class DataAccessor extends ADataAccessor
 				)
 			));
 			$response = $request->send()->json();
-			if (StatusConstants::OK == $response['status']) {
-				$data = BeneficiaryUser::fromJson($response['beneficiary']);
+			// - Wrong result
+			if (null == $response || ! isset($response['status'])) {
+				throw new \Exception(@$response['message'] . @$response['data']['message'], StatusConstants::UNKNWON_ERROR);
 			}
-			else {
-				throw new \Exception(@$response['message'] . @$response['data']['message'], StatusConstants::toCode($response['status']));
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
+			$data = BeneficiaryUser::fromJson($response['beneficiary']);
 		} catch (\Exception $e) {
-			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiary()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
+			throw new \Exception('Erreur lors de la recherche du profil du bénéficiaire.', StatusConstants::toCode($e->getCode()), $e);
 		}
 		return $data;
 	}
@@ -209,17 +211,45 @@ class DataAccessor extends ADataAccessor
 		return $data;
 	}
 
-	public function getBeneficiaryEvent($criteria = array())
+	public function getBeneficiaryEvent($beneficiaryId, $eventId)
 	{
-		if (empty($criteria) || (! array_key_exists('id', $criteria) && ! array_key_exists('beneficiaryId', $criteria))) {
-			throw new \Exception('Unknown beneficiary\'s event with these given criteria');
+		$data = null;
+		try {
+			$request = $this->client->get('beneficiaries/' . $beneficiaryId . '/agenda/' . $eventId);
+			$response = $request->send()->json();
+			if (null == $response || ! isset($response['status'])) {
+				throw new \Exception($response['message'], StatusConstants::UNKNWON_ERROR);
+			}
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
+			}
+			// - Got it!
+			if (isset($response['agenda'])) {
+				$result = $response['agenda'];
+				$beneficiary = null;
+				if (isset($result['beneficiary']) && is_array($result['beneficiary'])) {
+					$beneficiaryData = $result['beneficiary'];
+					$beneficiary = new BeneficiaryUser($beneficiaryData['id'], $beneficiaryData['title'], $beneficiaryData['first_name'], $beneficiaryData['last_name']);
+				}
+				if (isset($result['event']) && is_array($result['event'])) {
+					$eventData = $result['event'];
+					$event = new Event(@$eventData['object'], @$eventData['description'], @$eventData['place']);
+					$event->setId(@$eventData['id']);
+					$event->setDateStart(@$eventData['start_date']);
+					$event->setDateEnd(@$eventData['end_date']);
+					$event->addParticipant($beneficiary);
+					if (isset($eventData['participants']) && is_array($eventData['participants'])) {
+						foreach ($eventData['participants'] as $participantData) {
+							$event->addParticipant(new OrganizationUser(@$participantData['id'], @$participantData['title'], @$participantData['first_name'], @$participantData['last_name'], '', '', '', '', '', @$participantData['org_type'], @$participantData['role'], @$participantData['sub_role']));
+						}
+					}
+					$data = $event;
+				}
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de la recherche de l\'événement.', StatusConstants::toCode($e->getCode()), $e);
 		}
-		$event = null;
-		// Find most recent evaluation of this beneficiary
-		if (array_key_exists('id', $criteria) && - 1 != $criteria['id']) {
-			$event = $this->em->getRepository('AmisureP4SApiBundle:Event')->find($criteria['id']);
-		}
-		return $event;
+		return $data;
 	}
 
 	public function getBeneficiaryEvents($criteria = array())
@@ -227,68 +257,111 @@ class DataAccessor extends ADataAccessor
 		if (empty($criteria) || ! array_key_exists('beneficiaryId', $criteria)) {
 			throw new \Exception('Unknown beneficiary\'s event list with these given criteria');
 		}
-		$events = $this->em->getRepository('AmisureP4SApiBundle:Event')->findByBeneficiary($criteria['beneficiaryId'], @$criteria['endDate'], @$criteria['startDate']);
-		return $events;
+		
+		$data = null;
+		try {
+			$params = array();
+			if (isset($criteria['startDate'])) {
+				if ($criteria['startDate'] instanceof \DateTime) {
+					$criteria['startDate'] = $criteria['startDate']->getTimestamp();
+				}
+				$params['start_date'] = $criteria['startDate'];
+			}
+			else {
+				$params['start_date'] = time()-(60*60*24);
+			}
+			if (isset($criteria['endDate'])) {
+				if ($criteria['endDate'] instanceof \DateTime) {
+					$criteria['endDate'] = $criteria['endDate']->getTimestamp();
+				}
+				$params['end_date'] = $criteria['endDate'];
+			}
+			if (isset($criteria['participants'])) {
+				$params['participants'] = $criteria['participants'];
+			}
+			
+			$request = $this->client->get('beneficiaries/' . $criteria['beneficiaryId'] . '/agenda', array(), array(
+				'query' => $params
+			));
+			$response = $request->send()->json();
+			if (null == $response || ! isset($response['status'])) {
+				throw new \Exception($response['message'], StatusConstants::UNKNWON_ERROR);
+			}
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
+			}
+			// - Got it!
+			if (isset($response['agenda'])) {
+				$result = $response['agenda'];
+				$beneficiary = null;
+				if (isset($result['beneficiary']) && is_array($result['beneficiary'])) {
+					$beneficiaryData = $result['beneficiary'];
+					$beneficiary = new BeneficiaryUser(@$beneficiaryData['id'], @$beneficiaryData['title'], @$beneficiaryData['first_name'], @$beneficiaryData['last_name']);
+				}
+				$participants = array();
+				if (isset($result['participants']) && is_array($result['participants'])) {
+					foreach ($result['participants'] as $participantData) {
+						if (! isset($participantData['id'])) {
+							continue;
+						}
+						$participants[$participantData['id']] = new OrganizationUser($participantData['id'], @$participantData['title'], @$participantData['first_name'], @$participantData['last_name'], '', '', '', '', '', @$participantData['org_type'], @$participantData['role'], @$participantData['sub_role']);
+					}
+				}
+				if (isset($result['events']) && is_array($result['events'])) {
+					$data = array();
+					foreach ($result['events'] as $eventData) {
+						$event = new Event(@$eventData['object'], @$eventData['description'], @$eventData['place']);
+						$event->setId(@$eventData['id']);
+						$event->setDateStart(@$eventData['start_date']);
+						$event->setDateEnd(@$eventData['end_date']);
+						$event->addParticipant($beneficiary);
+						if (isset($eventData['participants']) && is_array($eventData['participants'])) {
+							foreach ($eventData['participants'] as $participant) {
+								if (! isset($participant['id']) || ! isset($participants[$participant['id']])) {
+									continue;
+								}
+								$event->addParticipant($participants[$participant['id']]);
+							}
+						}
+						$data[] = $event;
+					}
+				}
+			}
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de la recherche d\'événements.', StatusConstants::toCode($e->getCode()), $e);
+		}
+		return $data;
 	}
 
-	public function updateBeneficiaryEvent($event)
+	public function updateBeneficiaryEvent($beneficiaryId, $event)
 	{
-		// Create sub-events
-		$recurrence = $event->getRecurrence();
-		if (null != $recurrence && $recurrence->getNb() > 1) {
-			// Remove previous events
-			$childs = $event->getChilds();
-			if (null == $childs && $childs->count() <= 0 && null != $event->getParent() && null != $event->getParent()->getChilds() && $event->getParent()
-				->getChilds()
-				->count() >= 0) {
-				$childs = $parent->getChilds();
+		$data = false;
+		try {
+			// -- Create params
+			$params = $event->toArray();
+			
+			// -- Find data
+			$request = $this->client->post('beneficiaries/' . $beneficiaryId . '/agenda', array(), $params);
+			$response = $request->send()->json();
+			// - Wrong result
+			if (null == $response || ! isset($response['status'])) {
+				throw new \Exception($response['message'], StatusConstants::UNKNWON_ERROR);
 			}
-			$childsSize = $childs->count();
-			$stillSomeChild = true;
-			$participants = $event->getParticipants();
-			$nbEvent = $event->getRecurrence()->getNb();
-			for ($i = 0; $i < ($nbEvent - 1); $i ++) {
-				// Update childs (if any)
-				if ($stillSomeChild && $i < $childsSize) {
-					$subEvent = $childs->get($i);
-					$subEvent->setObject('[' . $event->getCategory() . '] ' . $event->getObject());
-				}
-				// Create new childs
-				else {
-					$stillSomeChild = false;
-					$subEvent = new Event('[' . $event->getCategory() . '] ' . $event->getObject());
-				}
-				foreach ($participants as $participant) {
-					$subEvent->addParticipant($participant);
-				}
-				$diff = '+' . (($i + 1) * $event->getRecurrence()->getFrequency()) . ' ' . $event->getRecurrence()->getType();
-				$dateStart = clone $event->getDateStart();
-				$dateEnd = clone $event->getDateEnd();
-				$subEvent->setDateStart($dateStart->modify($diff));
-				$subEvent->setDateEnd($dateEnd->modify($diff));
-				$subEvent->setRecurrence($recurrence);
-				$event->addChild($subEvent);
+			if (StatusConstants::OK != $response['status']) {
+				throw new \Exception($response['message'], StatusConstants::toCode($response['status']));
 			}
-			// Remove remaining childs (if any)
-			if ($stillSomeChild) {
-				for ($i = $i; $i < $childsSize; $i ++) {
-					$child = $childs->get($i);
-					$event->removeChild($i);
-					$this->em->remove($child);
-					$childsSize --;
-					$i --;
-				}
-			}
+			// - Got it!
+			$data = @$response['data'];
+		} catch (\Exception $e) {
+			throw new \Exception('Erreur lors de la création de l\'événement.', StatusConstants::toCode($e->getCode()), $e);
 		}
-		$this->em->persist($event);
-		$this->em->flush();
-		return $event->getId();
+		return $data;
 	}
 
 	public function removeBeneficiaryEvent(Event $event)
 	{
-		$this->em->remove($event);
-		$this->em->flush();
+		// $this->em->remove($event);
+		// $this->em->flush();
 		return true;
 	}
 
@@ -325,19 +398,20 @@ class DataAccessor extends ADataAccessor
 			}
 			// - Good result
 			$data = array();
+			$result = $response['data'];
 			// Model available and requested
-			if (array_key_exists('model', $response['data']) && (true === $model || 'separate' === $model)) {
-				$data['model'] = EvaluationModel::fromJson($response['data']['model']);
+			if (array_key_exists('model', $result) && (true === $model || 'separate' === $model)) {
+				$data['model'] = EvaluationModel::fromJson($result['model']);
 			}
 			// Evaluations available
 			if ('merge' == $model || false === $model) {
-				$data = EvaluationModel::fromJson($response['data']['evaluation']);
+				$data = EvaluationModel::fromJson($result['evaluation']);
 			}
 			elseif (false === $model) {
-				$data = Evaluation::fromJson($response['data']['evaluation']);
+				$data = Evaluation::fromJson($result['evaluation']);
 			}
 			else {
-				$data['evaluation'] = Evaluation::fromJson($response['data']['evaluation']);
+				$data['evaluation'] = Evaluation::fromJson($result['evaluation']);
 			}
 		} catch (\Exception $e) {
 			throw new \Exception('Erreur lors de l\'appel au P4S : getBeneficiaryEvaluation()', StatusConstants::toCode(StatusConstants::UNKNOWN_ERROR), $e);
@@ -375,13 +449,14 @@ class DataAccessor extends ADataAccessor
 			}
 			// - Good result
 			$data = array();
+			$result = $response['data'];
 			// Model available and requested
 			if (array_key_exists('model', $response['data']) && (true === $model || 'separate' === $model)) {
-				$data['model'] = EvaluationModel::fromJson($response['data']['model']);
+				$data['model'] = EvaluationModel::fromJson($result['model']);
 			}
 			// Evaluations available
 			$evaluations = array();
-			$receivedEvaluations = $response['data']['evaluations'];
+			$receivedEvaluations = $result['evaluations'];
 			foreach ($receivedEvaluations as $element) {
 				if ('merge' == $model) {
 					$evaluations[] = EvaluationModel::fromJson($element);
@@ -490,7 +565,7 @@ class DataAccessor extends ADataAccessor
 			}
 			
 			// -- Find data
-			$request = $this->client->post('beneficiaries/' . $beneficiaryId . '/links', $params);
+			$request = $this->client->post('beneficiaries/' . $beneficiaryId . '/links', array(), $params);
 			$response = $request->send()->json();
 			// - Wrong result
 			if (null == $response || ! isset($response['status'])) {
@@ -522,7 +597,7 @@ class DataAccessor extends ADataAccessor
 			}
 			
 			// -- Find data
-			$request = $this->client->delete('beneficiaries/' . $beneficiaryId . '/links', $params);
+			$request = $this->client->delete('beneficiaries/' . $beneficiaryId . '/links', array(), $params);
 			$response = $request->send()->json();
 			if (isset($response['status']) && (StatusConstants::OK == $response['status'] || StatusConstants::NOT_FOUND == $response['status'])) {
 				$data = true;

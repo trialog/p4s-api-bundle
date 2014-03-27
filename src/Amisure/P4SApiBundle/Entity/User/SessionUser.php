@@ -74,23 +74,22 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 	 */
 	private $roles;
 
-	/**
-	 *
-	 * @var Collection @ORM\ManyToMany(targetEntity="Amisure\P4SApiBundle\Entity\Event", inversedBy="participants")
-	 *      @ORM\JoinTable(name="s1_users_event")
-	 */
+// 	/**
+// 	 *
+// 	 * @var Collection @ORM\ManyToMany(targetEntity="Amisure\P4SApiBundle\Entity\Event", inversedBy="participants")
+// 	 *      @ORM\JoinTable(name="s1_users_event")
+// 	 */
 	private $events;
 
 	public function __construct($params = '', $firstname = '', $lastname = '', $organizationType = '', $zipcode = '')
 	{
 		// From Array
 		if (is_array($params)) {
-			extract($params);
-			$this->setUsername(@$username);
-			$this->setFirstname(@$firstname);
-			$this->setLastname(@$lastname);
-			$this->setOrganizationType(@$organizationType);
-			$this->setZipcode(@$zipcode);
+			$this->setUsername(@$params['id']);
+			$this->setFirstname(@$params['firstname']);
+			$this->setLastname(@$params['lastname']);
+			$this->setOrganizationType(@$params['organizationType']);
+			$this->setZipcode(@$params['zipcode']);
 			return;
 		}
 		// From flat data
@@ -136,6 +135,16 @@ class SessionUser extends OAuthUser implements EquatableInterface, \Serializable
 	public function getRoles()
 	{
 		return $this->roles->toArray();
+	}
+
+	public function getBusinessRole()
+	{
+		foreach ($this->roles as $role) {
+			if (UserConstants::ROLE_ADMIN != $role->getRole() && UserConstants::ROLE_USER != $role->getRole()) {
+				return $role->getRole();
+			}
+		}
+		return '';
 	}
 
 	public function getId()

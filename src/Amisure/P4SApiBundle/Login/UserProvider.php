@@ -64,7 +64,7 @@ class UserProvider extends EntityUserProvider implements UserProviderInterface
 	public function loadUserByOAuthUserResponse(UserResponseInterface $response)
 	{
 		// echa($response->getAccessToken());
-		// echa($response->getResponse(), __FILE__);
+// 		echa($response->getResponse(), __FILE__);
 		// -- Load user's data from P4S
 		$data = $response->getResponse();
 		if (null != $data && array_key_exists('status', $data) && ResponseHelper::OK == $data['status'] && array_key_exists('data', $data) && null != $data['data']) {

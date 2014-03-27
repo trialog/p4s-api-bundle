@@ -30,11 +30,11 @@ interface IDataAccessor
 	 */
 	public function getBeneficiaryProfile($beneficiaryId);
 
-	public function getBeneficiaryEvent($criteria = array());
+	public function getBeneficiaryEvent($beneficiaryId, $eventId);
 
 	public function getBeneficiaryEvents($criteria = array());
 
-	public function updateBeneficiaryEvent($event);
+	public function updateBeneficiaryEvent($beneficiaryId, $event);
 
 	public function removeBeneficiaryEvent(Event $event);
 

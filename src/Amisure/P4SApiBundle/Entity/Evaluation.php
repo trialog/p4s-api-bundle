@@ -314,6 +314,7 @@ class Evaluation
 		}
 		$element = new Evaluation(@$data['folderSectionId'], @$data['code'], @$data['beneficiaryId'], @$data['evaluatorId'], @$data['appId'], @$data['state'], @$data['id']);
 		$element->setDate(@$data['date']);
+		$element->setObject(@$data['object']);
 		$element->setLastUpdate(@$data['lastUpdate']);
 		if (array_key_exists('items', $data) && is_array($data['items']) && count($data['items']) > 0) {
 			foreach ($data['items'] as $item) {
@@ -331,7 +332,7 @@ class Evaluation
 		return $this->object;
 	}
 
-	public function setObject(string $object)
+	public function setObject($object)
 	{
 		$this->object = $object;
 		return $this;

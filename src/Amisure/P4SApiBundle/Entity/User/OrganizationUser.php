@@ -39,7 +39,7 @@ class OrganizationUser extends AUser
 	 */
 	public function __construct($params, $gender = '', $firstname = '', $lastname = '', $address = '', $email = '', $tel1 = '', $tel2 = '', $fax = '',  $organizationType= '', $role = 'ROLE_ORG_ADMIN_USER', $subRole = '')
 	{
-		parent::__construct($params, $role, $gender, $firstname, $lastname, $address, $email, $tel1, $tel2, $fax);
+		parent::__construct($params, $role, $gender, $firstname, $lastname, $address, $email, $tel1, $tel2, $fax, $organizationType);
 		// From Array
 		if (is_array($params)) {
 			extract($params);
